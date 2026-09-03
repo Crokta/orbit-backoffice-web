@@ -38,22 +38,34 @@ const authenticatedRoute = createRoute({
     // The deep link survives the redirect. A support agent pasted a ride URL into
     // a chat; landing them on a dashboard after signing in loses the thing they
     // were sent.
+    // TanStack signals a route redirect by throwing its own control-flow object, not
+    // an Error. The lint rule is right in general and wrong about this one API.
+    // eslint-disable-next-line @typescript-eslint/only-throw-error
     throw redirect({ to: '/sign-in', search: { redirect: location.href } })
   },
   component: AppShell,
 })
 
+// The two detail routes sit on their own path segments rather than under their list
+// pages. A nav link to `/compliance` next to a route at `/compliance/drivers/$id` makes
+// the router treat the nav link as possibly needing a driverId, which is both a type
+// error and a fair description of the ambiguity.
 const rideDetailRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
-  path: '/rides/$rideId',
+  path: '/ride/$rideId',
   component: RideDetailPage,
+})
+
+const driverKycRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: '/kyc/$driverId',
+  component: DriverKycPage,
 })
 
 const flatRoutes = [
   { path: '/', component: LiveOpsPage },
   { path: '/rides', component: RidesPage },
   { path: '/compliance', component: ComplianceQueuePage },
-  { path: '/compliance/drivers/$driverId', component: DriverKycPage },
   { path: '/fraud', component: FraudAlertsPage },
   { path: '/ledger', component: LedgerPage },
   { path: '/refunds', component: RefundsQueuePage },
@@ -65,6 +77,7 @@ export const routeTree = rootRoute.addChildren([
   signInRoute,
   authenticatedRoute.addChildren([
     rideDetailRoute,
+    driverKycRoute,
     ...flatRoutes.map((route) =>
       createRoute({ getParentRoute: () => authenticatedRoute, path: route.path, component: route.component }),
     ),

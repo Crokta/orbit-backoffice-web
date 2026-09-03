@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query'
-import { useNavigate, useSearch } from '@tanstack/react-router'
-import { useState, type FormEvent } from 'react'
+import { useNavigate } from '@tanstack/react-router'
+import { type SyntheticEvent, useState } from 'react'
 
 import { Button } from '../../components/ui/Button'
 import { api } from '../../lib/api/client'
@@ -24,7 +24,6 @@ interface SignInResponse {
  */
 export function SignInPage() {
   const navigate = useNavigate()
-  const search = useSearch({ strict: false }) as { redirect?: string }
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -41,7 +40,7 @@ export function SignInPage() {
       }
 
       setSession(result.accessToken, result.expiresIn)
-      void navigate({ to: search.redirect ?? '/' })
+      goBackToWhereTheyWere()
     },
   })
 
@@ -50,13 +49,36 @@ export function SignInPage() {
       api.post<SignInResponse>('/v1/auth/mfa/verify', { json: { challengeId, code } }),
     onSuccess: (result) => {
       setSession(result.accessToken, result.expiresIn)
-      void navigate({ to: search.redirect ?? '/' })
+      goBackToWhereTheyWere()
     },
   })
 
   const active = challengeId === null ? signIn : verify
 
-  function onSubmit(event: FormEvent) {
+  /**
+   * Returns the user to the page they were trying to reach.
+   *
+   * As `href`, not `to`. The redirect target arrives from the URL, so it is an
+   * arbitrary string rather than one of the router's known route paths — and treating
+   * an arbitrary string as a typed route is how a bad link becomes a runtime error
+   * instead of a 404.
+   */
+  function goBackToWhereTheyWere() {
+    // Read from the URL rather than from the router's typed search, because the value
+    // is an arbitrary path — the router cannot type it as one of its known routes, and
+    // pretending otherwise turns a bad link into a runtime error instead of a 404.
+    const target = new URLSearchParams(window.location.search).get('redirect')
+
+    // Same-origin only, and the `//` check matters: `//evil.example` is a
+    // protocol-relative URL, not a path. Without it the sign-in page is an open
+    // redirect — a link that authenticates the user and then hands them to somebody
+    // else's site, with the whole flow looking entirely legitimate.
+    void (target !== null && target.startsWith('/') && !target.startsWith('//')
+      ? navigate({ href: target })
+      : navigate({ to: '/' }))
+  }
+
+  function onSubmit(event: SyntheticEvent) {
     event.preventDefault()
     active.mutate()
   }
@@ -88,7 +110,7 @@ export function SignInPage() {
                 autoComplete="username"
                 required
                 value={email}
-                onChange={(event) => setEmail(event.target.value)}
+                onChange={(event) => { setEmail(event.target.value); }}
                 className="h-10 w-full rounded-md border border-line bg-surface px-3 text-[15px]"
               />
             </Field>
@@ -100,7 +122,7 @@ export function SignInPage() {
                 autoComplete="current-password"
                 required
                 value={password}
-                onChange={(event) => setPassword(event.target.value)}
+                onChange={(event) => { setPassword(event.target.value); }}
                 className="h-10 w-full rounded-md border border-line bg-surface px-3 text-[15px]"
               />
             </Field>
@@ -114,7 +136,7 @@ export function SignInPage() {
               maxLength={6}
               required
               value={code}
-              onChange={(event) => setCode(event.target.value.replace(/\D/g, ''))}
+              onChange={(event) => { setCode(event.target.value.replace(/\D/g, '')); }}
               className="tabular h-12 w-full rounded-md border border-line bg-surface px-3 text-center text-[24px] tracking-[0.4em]"
             />
           </Field>

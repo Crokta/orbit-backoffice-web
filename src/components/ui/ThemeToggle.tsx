@@ -12,11 +12,11 @@ type Theme = 'light' | 'dark'
  */
 export function ThemeToggle() {
   const [theme, setTheme] = useState<Theme>(
-    () => (document.documentElement.dataset['theme'] as Theme | undefined) ?? 'light',
+    () => (document.documentElement.dataset.theme as Theme | undefined) ?? 'light',
   )
 
   useEffect(() => {
-    document.documentElement.dataset['theme'] = theme
+    document.documentElement.dataset.theme = theme
 
     try {
       localStorage.setItem('orbit-theme', theme)
@@ -29,7 +29,7 @@ export function ThemeToggle() {
   return (
     <button
       type="button"
-      onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+      onClick={() => { setTheme(theme === 'dark' ? 'light' : 'dark'); }}
       className="rounded-md px-3 py-1.5 text-[13px] font-medium text-fg-secondary hover:bg-hover"
       aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
     >

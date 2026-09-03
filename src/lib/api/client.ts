@@ -9,7 +9,7 @@ import { getAccessToken, refreshAccessToken } from '../auth/session'
  * header sanitisation happen, and a client that can reach a service directly is a
  * client that can skip all three (§5.1).
  */
-const BASE_URL = import.meta.env['VITE_API_BASE_URL'] ?? '/api'
+const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api'
 
 interface RequestOptions extends Omit<RequestInit, 'body'> {
   /** Serialised as JSON. Pass `FormData` through `raw` instead. */
@@ -62,15 +62,27 @@ async function send(path: string, options: RequestOptions): Promise<Response> {
 
   const token = getAccessToken()
 
+  // Built as a Headers object rather than spread into a literal. `HeadersInit` is a
+  // union that includes an array of pairs and a Headers instance, and spreading either
+  // of those into an object produces numeric indices instead of headers.
+  const merged = new Headers(headers)
+  merged.set('Accept', 'application/json')
+
+  if (json !== undefined) {
+    merged.set('Content-Type', 'application/json')
+  }
+
+  if (token !== null) {
+    merged.set('Authorization', `Bearer ${token}`)
+  }
+
+  if (idempotencyKey !== undefined) {
+    merged.set('Idempotency-Key', idempotencyKey)
+  }
+
   return fetch(url, {
     ...rest,
-    headers: {
-      Accept: 'application/json',
-      ...(json === undefined ? {} : { 'Content-Type': 'application/json' }),
-      ...(token === null ? {} : { Authorization: `Bearer ${token}` }),
-      ...(idempotencyKey === undefined ? {} : { 'Idempotency-Key': idempotencyKey }),
-      ...headers,
-    },
+    headers: merged,
     // `null`, not `undefined`. Under exactOptionalPropertyTypes an undefined body is
     // not assignable to RequestInit, and null is what fetch means by "no body" anyway.
     body: json === undefined ? (raw ?? null) : JSON.stringify(json),

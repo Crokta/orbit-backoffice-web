@@ -35,7 +35,7 @@ interface KycCheck {
  * has nothing to answer.
  */
 export function DriverKycPage() {
-  const { driverId } = useParams({ from: '/authenticated/compliance/drivers/$driverId' })
+  const { driverId } = useParams({ from: '/authenticated/kyc/$driverId' })
   const queryClient = useQueryClient()
   const [reason, setReason] = useState('')
 
@@ -129,7 +129,7 @@ export function DriverKycPage() {
           id="reason"
           rows={3}
           value={reason}
-          onChange={(event) => setReason(event.target.value)}
+          onChange={(event) => { setReason(event.target.value); }}
           className="mt-1 w-full rounded-md border border-line bg-surface px-3 py-2 text-[13px]"
           placeholder="The vehicle photograph does not show the registration plate clearly."
         />

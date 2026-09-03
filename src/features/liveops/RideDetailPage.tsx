@@ -66,7 +66,7 @@ interface AuditEntry {
  * when a rider is on the phone asking about their fare.
  */
 export function RideDetailPage() {
-  const { rideId } = useParams({ from: '/authenticated/rides/$rideId' })
+  const { rideId } = useParams({ from: '/authenticated/ride/$rideId' })
   const queryClient = useQueryClient()
 
   const overview = useQuery({
@@ -261,14 +261,14 @@ function ForceCancelPanel({
         id="reason"
         rows={2}
         value={reason}
-        onChange={(event) => setReason(event.target.value)}
+        onChange={(event) => { setReason(event.target.value); }}
         className="mt-1 w-full rounded-md border border-line bg-surface px-3 py-2 text-[13px]"
         placeholder="Driver's phone died mid-trip; rider confirmed they arrived."
       />
 
       <div className="mt-3 flex items-center justify-between">
         <p className="text-[11px] text-fg-tertiary">
-          {reason.trim().length < 10 ? `${10 - reason.trim().length} more characters needed` : ' '}
+          {reason.trim().length < 10 ? `${String(10 - reason.trim().length)} more characters needed` : ' '}
         </p>
 
         <Button

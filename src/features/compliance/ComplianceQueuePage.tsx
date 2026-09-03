@@ -41,7 +41,7 @@ export function ComplianceQueuePage() {
         {data?.map((item) => (
           <li key={item.driverId}>
             <Link
-              to="/compliance/drivers/$driverId"
+              to="/kyc/$driverId"
               params={{ driverId: item.driverId }}
               className="flex items-center justify-between gap-4 px-4 py-3 hover:bg-hover"
             >

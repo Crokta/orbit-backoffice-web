@@ -46,7 +46,7 @@ export function AuditLogPage() {
         <input
           id="resource"
           value={resource}
-          onChange={(event) => setResource(event.target.value)}
+          onChange={(event) => { setResource(event.target.value); }}
           placeholder="ride:rid_88ff or zone:lagos"
           className="tabular h-10 w-full max-w-md rounded-md border border-line bg-surface px-3 text-[13px]"
         />

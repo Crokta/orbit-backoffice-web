@@ -46,7 +46,7 @@ export function RidesPage() {
       <div className="flex flex-wrap items-center gap-2">
         <input
           value={search}
-          onChange={(event) => setSearch(event.target.value)}
+          onChange={(event) => { setSearch(event.target.value); }}
           placeholder="Ride id, rider or driver"
           aria-label="Search rides"
           className="h-9 w-72 rounded-md border border-line bg-surface px-3 text-[13px]"
@@ -56,7 +56,7 @@ export function RidesPage() {
           <button
             key={option}
             type="button"
-            onClick={() => setState(option)}
+            onClick={() => { setState(option); }}
             aria-pressed={state === option}
             className={`rounded-full px-3 py-1.5 text-[13px] font-medium ${
               state === option ? 'bg-brand text-fg-on-brand' : 'bg-subtle text-fg-secondary hover:bg-hover'
@@ -97,7 +97,7 @@ export function RidesPage() {
                 <tr key={ride.rideId} className="border-b border-line-subtle last:border-0 hover:bg-hover">
                   <td className="px-4 py-3">
                     <Link
-                      to="/rides/$rideId"
+                      to="/ride/$rideId"
                       params={{ rideId: ride.rideId }}
                       className="tabular text-fg-brand underline-offset-2 hover:underline"
                     >
