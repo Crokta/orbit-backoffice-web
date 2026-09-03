@@ -1,6 +1,13 @@
 # orbit-backoffice-web
 
-The operations console: live dispatch, compliance, finance and platform controls.
+The operations console. Live dispatch, compliance, finance and platform controls — built for people who are dealing with something going wrong.
+
+|  |  |
+|---|---|
+| **Stack** | React 19 · TypeScript · Tailwind 4 · TanStack · Vite · pnpm |
+| **Ports** | `5174` — Dev server |
+| **Tests** | 23, all passing |
+| **Technical reference** | [`docs/TECHNICAL.md`](docs/TECHNICAL.md) · [PDF](docs/orbit-backoffice-web-technical-reference.pdf) |
 
 React 19 · TypeScript · Tailwind 4 · TanStack Query/Router/Table · Vite · pnpm.
 
@@ -119,3 +126,17 @@ Multistage; nginx as UID 64198, no build toolchain in the runtime image. See
 
 23, shared with the enterprise app where the code is shared. The interesting ones cover the
 session and error-handling primitives every screen depends on.
+
+---
+
+## Further reading
+
+| | |
+|---|---|
+| [`docs/TECHNICAL.md`](docs/TECHNICAL.md) | The full technical reference: architecture, domain model, design decisions, data model, API, events, flows, failure modes, configuration and testing |
+| [`docs/orbit-backoffice-web-technical-reference.pdf`](docs/orbit-backoffice-web-technical-reference.pdf) | The same document, typeset |
+| [`../README.md`](../README.md) | The platform: every service, how they fit together, and how to bring the whole thing up |
+| [`../architecture.md`](../architecture.md) | The specification this was built from |
+
+This repository is **independent**. It has its own git history, its own build and its own
+deployment lifecycle; nothing above its root is inherited.
