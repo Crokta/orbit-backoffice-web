@@ -1,0 +1,10 @@
+# pnpm 11 reads its settings from here rather than from package.json.
+#
+# Postinstall scripts are blocked by default, which is the setting that matters for
+# supply-chain safety: an arbitrary script running at install time is the easiest way
+# for a compromised transitive dependency to reach a developer's machine. These two are
+# allowed explicitly because they genuinely need it — esbuild places a platform binary
+# and msw writes its service worker into public/. Everything else stays blocked.
+allowBuilds:
+  esbuild: true
+  msw: true

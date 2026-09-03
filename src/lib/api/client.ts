@@ -71,7 +71,9 @@ async function send(path: string, options: RequestOptions): Promise<Response> {
       ...(idempotencyKey === undefined ? {} : { 'Idempotency-Key': idempotencyKey }),
       ...headers,
     },
-    body: json === undefined ? raw : JSON.stringify(json),
+    // `null`, not `undefined`. Under exactOptionalPropertyTypes an undefined body is
+    // not assignable to RequestInit, and null is what fetch means by "no body" anyway.
+    body: json === undefined ? (raw ?? null) : JSON.stringify(json),
 
     // Refresh tokens live in an httpOnly cookie, so the browser has to be allowed to
     // send it. The access token is held in memory and sent as a header — a token in
