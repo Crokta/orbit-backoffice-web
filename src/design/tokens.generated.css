@@ -1,0 +1,126 @@
+:root,
+[data-theme='light'] {
+  /* Surfaces */
+  --bg-canvas: #F4F6F8;
+  --bg-surface: #FFFFFF;
+  --bg-surface-raised: #FFFFFF;
+  --bg-surface-sunken: #F4F6F8;
+  --bg-overlay: #FFFFFF;
+  --bg-subtle: #E4E7EB;
+  --bg-hover: #E4E7EB;
+  --bg-pressed: #C3C8D0;
+  --bg-disabled: #E4E7EB;
+  --bg-inverse: #08090B;
+  --bg-brand: #1B5FD9;
+  --bg-brand-hover: #1546A6;
+  --bg-brand-subtle: #EBF2FF;
+  --bg-success: #15803D;
+  --bg-success-subtle: #DCFCE7;
+  --bg-warning: #F59E0B;
+  --bg-warning-subtle: #FEF3C7;
+  --bg-danger: #B91C1C;
+  --bg-danger-subtle: #FEE2E2;
+  --bg-surge: #9333EA;
+  --bg-surge-subtle: #F3E8FF;
+
+  /* Text */
+  --text-primary: #08090B;
+  --text-secondary: #383D45;
+  --text-tertiary: #4B515B;
+  --text-disabled: #6B7280;
+  --text-inverse: #FFFFFF;
+  --text-on-brand: #FFFFFF;
+  --text-brand: #1B5FD9;
+  --text-success: #15803D;
+  --text-warning: #B45309;
+  --text-danger: #B91C1C;
+  --text-surge: #9333EA;
+
+  /* Borders */
+  --border-subtle: #E4E7EB;
+  --border-default: #C3C8D0;
+  --border-strong: #9AA1AC;
+  --border-brand: #2E7DFF;
+  --border-focus: #2E7DFF;
+  --border-success: #16A34A;
+  --border-warning: #F59E0B;
+  --border-danger: #EF4444;
+
+  /* Map */
+  --map-base: #F4F6F8;
+  --map-road: #E4E7EB;
+  --map-route: #2E7DFF;
+  --map-pickup: #16A34A;
+  --map-dropoff: #EF4444;
+  --map-driver: #08090B;
+
+  /* Ride status */
+  --status-online: #15803D;
+  --status-offline: #6B7280;
+  --status-in-trip: #2E7DFF;
+  --status-cancelled: #EF4444;
+  --status-arrears: #F59E0B;
+}
+
+[data-theme='dark'] {
+  /* Surfaces */
+  --bg-canvas: #08090B;
+  --bg-surface: #0E1013;
+  --bg-surface-raised: #141619;
+  --bg-surface-sunken: #000000;
+  --bg-overlay: #1A1D22;
+  --bg-subtle: #1A1D22;
+  --bg-hover: #212429;
+  --bg-pressed: #292D34;
+  --bg-disabled: #1A1D22;
+  --bg-inverse: #FFFFFF;
+  --bg-brand: #1B5FD9;
+  --bg-brand-hover: #2E7DFF;
+  --bg-brand-subtle: #0A2149;
+  --bg-success: #15803D;
+  --bg-success-subtle: #0A2E16;
+  --bg-warning: #F59E0B;
+  --bg-warning-subtle: #3D1E03;
+  --bg-danger: #B91C1C;
+  --bg-danger-subtle: #3B0A0A;
+  --bg-surge: #9333EA;
+  --bg-surge-subtle: #2E1065;
+
+  /* Text */
+  --text-primary: #FFFFFF;
+  --text-secondary: #C3C8D0;
+  --text-tertiary: #9AA1AC;
+  --text-disabled: #6B7280;
+  --text-inverse: #08090B;
+  --text-on-brand: #FFFFFF;
+  --text-brand: #7FA8FF;
+  --text-success: #4ADE80;
+  --text-warning: #FCD34D;
+  --text-danger: #FCA5A5;
+  --text-surge: #C084FC;
+
+  /* Borders */
+  --border-subtle: #1A1D22;
+  --border-default: #292D34;
+  --border-strong: #383D45;
+  --border-brand: #2E7DFF;
+  --border-focus: #4D8AFF;
+  --border-success: #16A34A;
+  --border-warning: #F59E0B;
+  --border-danger: #EF4444;
+
+  /* Map */
+  --map-base: #0E1013;
+  --map-road: #212429;
+  --map-route: #4D8AFF;
+  --map-pickup: #22C55E;
+  --map-dropoff: #F87171;
+  --map-driver: #FFFFFF;
+
+  /* Ride status */
+  --status-online: #22C55E;
+  --status-offline: #6B7280;
+  --status-in-trip: #4D8AFF;
+  --status-cancelled: #F87171;
+  --status-arrears: #FBBF24;
+}

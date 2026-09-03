@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Orbit backoffice operations console</title>
+
+    <!--
+      The theme is applied before first paint so a dark-mode user never sees a white
+      flash. It has to be inline and synchronous: a deferred script runs after the
+      browser has already painted.
+    -->
+    <script>
+      try {
+        var stored = localStorage.getItem('orbit-theme')
+        var system = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+        document.documentElement.dataset.theme = stored || system
+      } catch (_) {
+        /* Private mode, or storage disabled. The light default already applies. */
+      }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,176 @@
+/*
+ * The Orbit design system, as Tailwind 4 sees it.
+ *
+ * `tokens.generated.css` is extracted from the Figma file and must not be edited by
+ * hand — regenerate it instead. This file maps those tokens onto Tailwind's theme so
+ * that `bg-surface` and `--bg-surface` are the same thing rather than two things that
+ * happen to agree today.
+ */
+
+@import 'tailwindcss';
+@import './tokens.generated.css';
+
+@theme inline {
+  /* Colours. Named by role, never by hue: `bg-brand` survives a rebrand, `bg-blue-600`
+     does not, and a designer changing the brand colour should not become a
+     find-and-replace across two applications. */
+  --color-canvas: var(--bg-canvas);
+  --color-surface: var(--bg-surface);
+  --color-surface-raised: var(--bg-surface-raised);
+  --color-surface-sunken: var(--bg-surface-sunken);
+  --color-overlay: var(--bg-overlay);
+  --color-subtle: var(--bg-subtle);
+  --color-hover: var(--bg-hover);
+  --color-pressed: var(--bg-pressed);
+  --color-disabled: var(--bg-disabled);
+  --color-inverse: var(--bg-inverse);
+
+  --color-brand: var(--bg-brand);
+  --color-brand-hover: var(--bg-brand-hover);
+  --color-brand-subtle: var(--bg-brand-subtle);
+  --color-success: var(--bg-success);
+  --color-success-subtle: var(--bg-success-subtle);
+  --color-warning: var(--bg-warning);
+  --color-warning-subtle: var(--bg-warning-subtle);
+  --color-danger: var(--bg-danger);
+  --color-danger-subtle: var(--bg-danger-subtle);
+  --color-surge: var(--bg-surge);
+  --color-surge-subtle: var(--bg-surge-subtle);
+
+  --color-fg: var(--text-primary);
+  --color-fg-secondary: var(--text-secondary);
+  --color-fg-tertiary: var(--text-tertiary);
+  --color-fg-disabled: var(--text-disabled);
+  --color-fg-inverse: var(--text-inverse);
+  --color-fg-on-brand: var(--text-on-brand);
+  --color-fg-brand: var(--text-brand);
+  --color-fg-success: var(--text-success);
+  --color-fg-warning: var(--text-warning);
+  --color-fg-danger: var(--text-danger);
+  --color-fg-surge: var(--text-surge);
+
+  --color-line-subtle: var(--border-subtle);
+  --color-line: var(--border-default);
+  --color-line-strong: var(--border-strong);
+  --color-line-brand: var(--border-brand);
+  --color-line-focus: var(--border-focus);
+
+  --color-status-online: var(--status-online);
+  --color-status-offline: var(--status-offline);
+  --color-status-in-trip: var(--status-in-trip);
+  --color-status-cancelled: var(--status-cancelled);
+  --color-status-arrears: var(--status-arrears);
+
+  --color-map-base: var(--map-base);
+  --color-map-road: var(--map-road);
+  --color-map-route: var(--map-route);
+  --color-map-pickup: var(--map-pickup);
+  --color-map-dropoff: var(--map-dropoff);
+  --color-map-driver: var(--map-driver);
+
+  /* Spacing, straight off the Figma scale. */
+  --spacing-2xs: 2px;
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-base: 16px;
+  --spacing-lg: 20px;
+  --spacing-xl: 24px;
+  --spacing-2xl: 32px;
+  --spacing-3xl: 40px;
+  --spacing-4xl: 48px;
+  --spacing-5xl: 64px;
+  --spacing-6xl: 80px;
+
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-3xl: 28px;
+
+  /* Inter for interface text. IBM Plex Mono for ride ids, fares and ledger figures —
+     anything that needs tabular alignment, which on a finance screen is the difference
+     between a column you can scan and a column you cannot. */
+  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --text-display-xl: 48px;
+  --text-display-xl--line-height: 52px;
+  --text-display-l: 36px;
+  --text-display-l--line-height: 40px;
+  --text-heading-xl: 28px;
+  --text-heading-xl--line-height: 34px;
+  --text-heading-l: 24px;
+  --text-heading-l--line-height: 30px;
+  --text-heading-m: 20px;
+  --text-heading-m--line-height: 26px;
+  --text-heading-s: 17px;
+  --text-heading-s--line-height: 24px;
+  --text-heading-xs: 15px;
+  --text-heading-xs--line-height: 20px;
+  --text-body-l: 17px;
+  --text-body-l--line-height: 26px;
+  --text-body-m: 15px;
+  --text-body-m--line-height: 22px;
+  --text-body-s: 13px;
+  --text-body-s--line-height: 18px;
+  --text-label-l: 15px;
+  --text-label-l--line-height: 20px;
+  --text-label-m: 13px;
+  --text-label-m--line-height: 16px;
+  --text-label-s: 11px;
+  --text-label-s--line-height: 14px;
+  --text-caption: 12px;
+  --text-caption--line-height: 16px;
+
+  /* On dark surfaces a shadow alone reads as almost nothing, so each level pairs a
+     shadow with a step up the neutral ramp. That is why `bg-surface-raised` exists as
+     a token rather than being a shadow utility. */
+  --shadow-e1: 0 1px 2px rgb(0 0 0 / 0.08), 0 1px 3px rgb(0 0 0 / 0.06);
+  --shadow-e2: 0 2px 6px rgb(0 0 0 / 0.10), 0 4px 12px rgb(0 0 0 / 0.08);
+  --shadow-e3: 0 8px 24px rgb(0 0 0 / 0.14), 0 2px 8px rgb(0 0 0 / 0.08);
+  --shadow-e4: 0 12px 32px rgb(0 0 0 / 0.18), 0 4px 12px rgb(0 0 0 / 0.10);
+  --shadow-sheet: 0 -8px 32px rgb(0 0 0 / 0.16);
+}
+
+@layer base {
+  html {
+    color-scheme: light dark;
+  }
+
+  body {
+    background-color: var(--bg-canvas);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: var(--text-body-m);
+    line-height: var(--text-body-m--line-height);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* A visible focus ring on everything, and it is never removed. Operations staff work
+     these consoles at speed and largely by keyboard; a focus style that only appears
+     for `:focus-visible` heuristics is one that vanishes exactly when it is needed. */
+  :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+    outline: 2px solid var(--border-focus);
+    outline-offset: 2px;
+    border-radius: var(--radius-xs);
+  }
+
+  /* Figures line up in columns. A fare table where the digits are proportionally
+     spaced cannot be scanned, and scanning is the whole job on a ledger screen. */
+  .tabular {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
