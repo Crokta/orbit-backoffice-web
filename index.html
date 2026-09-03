@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -13,8 +13,10 @@
     <script>
       try {
         var stored = localStorage.getItem('orbit-theme')
-        var system = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-        document.documentElement.dataset.theme = stored || system
+        // Dark by default, unlike the enterprise app. Live-ops screens sit on wall
+        // displays in rooms that stay dim for hours, and a white canvas at 3 a.m. is
+        // the reason people turn the monitor away.
+        document.documentElement.dataset.theme = stored || 'dark'
       } catch (_) {
         /* Private mode, or storage disabled. The light default already applies. */
       }

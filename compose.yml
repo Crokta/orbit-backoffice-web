@@ -1,0 +1,32 @@
+# ---------------------------------------------------------------------------
+# Local container run. For day-to-day development use `pnpm dev` instead — this
+# exists to verify the production image, which is a different artefact entirely.
+#
+#   cp .env.example .env
+#   docker compose up -d --build
+# ---------------------------------------------------------------------------
+
+name: ${COMPOSE_PROJECT_NAME:-orbit-backoffice-web}
+
+networks:
+  orbit-net:
+    # Created by shared-infra. Declaring it external rather than defining it here
+    # is what lets this app reach the gateway by hostname while still living in
+    # its own repository.
+    external: true
+    name: ${ORBIT_NETWORK:-orbit-net}
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file: .env
+    environment:
+      # The gateway hostname on the shared network. Nothing here names a service
+      # directly — the whole point of the gateway is that clients cannot.
+      ORBIT_GATEWAY_URL: ${ORBIT_GATEWAY_URL:-http://orbit-api-gateway:8080}
+    ports:
+      - "${WEB_PORT:-5174}:8080"
+    networks: [orbit-net]
+    restart: unless-stopped

@@ -1,0 +1,55 @@
+server {
+    # 8080, not 80. Binding below 1024 needs a capability the container does not
+    # have, which is the point of running as an unprivileged user.
+    listen 8080;
+    server_name _;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # Hashed asset filenames, so they can be cached forever. A year is the maximum
+    # any browser honours, and a content change produces a new filename anyway.
+    location /assets/ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # index.html is never cached. It is the file that names the current assets, so
+    # a stale copy pins a user to a deployment that no longer exists.
+    location = /index.html {
+        add_header Cache-Control "no-store, must-revalidate";
+    }
+
+    location = /healthz {
+        access_log off;
+        return 200 "ok\n";
+    }
+
+    # Client-side routing: every unknown path is the application, not a 404. The
+    # server has no idea what /trips means and does not need to.
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # The application talks to Orbit through nothing else. Even here, the browser
+    # only ever sees a same-origin /api path — the gateway is where authentication,
+    # rate limiting and header sanitisation happen.
+    location /api/ {
+        proxy_pass ${ORBIT_GATEWAY_URL}/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # Long enough for a gateway that is retrying an upstream, short enough that
+        # a hung request does not hold a browser connection open indefinitely.
+        proxy_read_timeout 30s;
+    }
+
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+    gzip on;
+    gzip_types text/css application/javascript application/json image/svg+xml;
+    gzip_min_length 1024;
+}

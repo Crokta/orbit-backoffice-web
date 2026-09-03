@@ -11,7 +11,7 @@ export default defineConfig({
   },
 
   server: {
-    port: Number(process.env.PORT ?? 5173),
+    port: Number(process.env.PORT ?? 5174),
 
     // Everything goes through the YARP gateway — no direct service URLs anywhere in
     // the app, in development or in production. The gateway is where authentication,
