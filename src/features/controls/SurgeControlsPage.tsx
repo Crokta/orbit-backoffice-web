@@ -10,8 +10,8 @@ import { LoadError } from '../../components/ui/LoadError'
 interface Zone {
   readonly zoneId: string
   readonly name: string
-  readonly surgeMultiplier: number
-  readonly surgeCap: number
+  readonly market: string
+  readonly isOperating: boolean
   readonly killSwitchEngaged: boolean
   readonly killSwitchReason: string | null
   readonly killSwitchBy: string | null
@@ -74,10 +74,8 @@ export function SurgeControlsPage() {
 
                 <p className="text-[13px] text-fg-secondary">
                   Current{' '}
-                  <span className={zone.surgeMultiplier > 1 ? 'tabular text-fg-surge' : 'tabular'}>
-                    {zone.surgeMultiplier.toFixed(1)}×
-                  </span>{' '}
-                  · cap {zone.surgeCap.toFixed(1)}×
+                  <span className="tabular">{zone.market}</span>{' '}
+                  · {zone.isOperating ? 'operating' : 'not operating'}
                 </p>
 
                 {zone.killSwitchEngaged ? (

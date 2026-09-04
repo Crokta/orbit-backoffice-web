@@ -88,8 +88,16 @@ export function RidesPage() {
 
           <tbody>
             {rides.isError ? (
-        <LoadError error={rides.error} what="the ride list" onRetry={() => { void rides.refetch() }} />
-      ) : rides.isPending ? (
+              <tr>
+                <td colSpan={7} className="px-4 py-6">
+                  <LoadError
+                    error={rides.error}
+                    what="the ride list"
+                    onRetry={() => { void rides.refetch() }}
+                  />
+                </td>
+              </tr>
+            ) : rides.isPending ? (
               <tr>
                 <td colSpan={7} className="px-4 py-10 text-center text-fg-tertiary">
                   Loading…

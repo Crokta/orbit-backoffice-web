@@ -79,8 +79,16 @@ export function LedgerPage() {
 
           <tbody>
             {postings.isError ? (
-        <LoadError error={postings.error} what="the ledger" onRetry={() => { void postings.refetch() }} />
-      ) : postings.isPending ? (
+              <tr>
+                <td colSpan={6} className="px-4 py-6">
+                  <LoadError
+                    error={postings.error}
+                    what="the ledger"
+                    onRetry={() => { void postings.refetch() }}
+                  />
+                </td>
+              </tr>
+            ) : postings.isPending ? (
               <tr>
                 <td colSpan={6} className="px-4 py-10 text-center text-fg-tertiary">
                   Loading postings…
@@ -92,10 +100,12 @@ export function LedgerPage() {
                   key={`${posting.entryId}-${String(index)}`}
                   className="border-b border-line-subtle last:border-0"
                 >
-                  <td className="tabular px-4 py-3">{posting.entryId}</td>
-                  <td className="tabular px-4 py-3">{posting.account}</td>
+                  <td className="tabular whitespace-nowrap px-4 py-3" title={posting.entryId}>
+                    {posting.entryId.split('-')[0]}
+                  </td>
+                  <td className="tabular whitespace-nowrap px-4 py-3">{posting.account}</td>
                   <td className="px-4 py-3 text-fg-secondary">{posting.narrative}</td>
-                  <td className="px-4 py-3 text-fg-secondary">
+                  <td className="whitespace-nowrap px-4 py-3 text-fg-secondary">
                     {new Date(posting.postedAt).toLocaleString('en-NG')}
                   </td>
                   <td className="px-4 py-3 text-right">
