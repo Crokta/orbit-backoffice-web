@@ -7,6 +7,7 @@ import { AuditLogPage } from '../features/controls/AuditLogPage'
 import { ComplianceQueuePage } from '../features/compliance/ComplianceQueuePage'
 import { DriverKycPage } from '../features/compliance/DriverKycPage'
 import { FraudAlertsPage } from '../features/compliance/FraudAlertsPage'
+import { LeadsPage } from '../features/growth/LeadsPage'
 import { LedgerPage } from '../features/finance/LedgerPage'
 import { LiveOpsPage } from '../features/liveops/LiveOpsPage'
 import { RideDetailPage } from '../features/liveops/RideDetailPage'
@@ -71,6 +72,7 @@ const flatRoutes = [
   { path: '/refunds', component: RefundsQueuePage },
   { path: '/surge', component: SurgeControlsPage },
   { path: '/audit', component: AuditLogPage },
+  { path: '/leads', component: LeadsPage },
 ] as const
 
 export const routeTree = rootRoute.addChildren([

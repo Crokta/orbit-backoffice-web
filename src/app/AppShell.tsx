@@ -33,6 +33,10 @@ const SECTIONS = [
     ],
   },
   {
+    label: 'Growth',
+    items: [{ to: '/leads', label: 'Leads' }],
+  },
+  {
     label: 'Platform',
     items: [
       { to: '/surge', label: 'Surge & zones' },
