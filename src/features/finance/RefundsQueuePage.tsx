@@ -5,6 +5,7 @@ import { Money } from '../../components/ui/Money'
 import { api, newIdempotencyKey } from '../../lib/api/client'
 import { ApiError } from '../../lib/api/problem'
 import { queryKeys } from '../../lib/query/client'
+import { LoadError } from '../../components/ui/LoadError'
 
 interface ApprovalRow {
   readonly requestId: string
@@ -49,6 +50,10 @@ export function RefundsQueuePage() {
     return <p className="text-[13px] text-fg-secondary">Loading queue…</p>
   }
 
+  if (queue.isError) {
+    return <LoadError error={queue.error} what="the approvals queue" onRetry={() => { void queue.refetch() }} />
+  }
+
   return (
     <div className="max-w-4xl space-y-4">
       <h1 className="text-[28px] font-semibold leading-[34px]">Approvals</h1>
@@ -58,13 +63,13 @@ export function RefundsQueuePage() {
         not the decision anybody made.
       </p>
 
-      {queue.data?.length === 0 ? (
+      {queue.data.length === 0 ? (
         <p className="rounded-lg border border-line-subtle bg-surface p-8 text-center text-[13px] text-fg-tertiary">
           Nothing is waiting.
         </p>
       ) : null}
 
-      {queue.data?.map((row) => (
+      {queue.data.map((row) => (
         <article key={row.requestId} className="rounded-lg border border-line-subtle bg-surface p-4">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">

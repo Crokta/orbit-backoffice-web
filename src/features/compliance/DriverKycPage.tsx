@@ -4,6 +4,7 @@ import { useState } from 'react'
 
 import { Button } from '../../components/ui/Button'
 import { api, newIdempotencyKey } from '../../lib/api/client'
+import { LoadError } from '../../components/ui/LoadError'
 
 interface KycDetail {
   readonly driverId: string
@@ -59,13 +60,17 @@ export function DriverKycPage() {
     return <p className="text-[13px] text-fg-secondary">Loading…</p>
   }
 
+  if (detail.isError) {
+    return <LoadError error={detail.error} what="this driver" onRetry={() => { void detail.refetch() }} />
+  }
+
   const data = detail.data
 
   return (
     <div className="max-w-3xl space-y-5">
       <header>
-        <h1 className="text-[28px] font-semibold leading-[34px]">{data?.displayName}</h1>
-        <p className="text-[13px] text-fg-secondary">{data?.phone}</p>
+        <h1 className="text-[28px] font-semibold leading-[34px]">{data.displayName}</h1>
+        <p className="text-[13px] text-fg-secondary">{data.phone}</p>
       </header>
 
       <section className="rounded-lg border border-line-subtle bg-surface p-4">
@@ -74,7 +79,7 @@ export function DriverKycPage() {
         </h2>
 
         <ul className="space-y-2">
-          {data?.checks.map((check) => (
+          {data.checks.map((check) => (
             <li key={check.name} className="flex items-start justify-between gap-4 text-[13px]">
               <div>
                 <p className="font-medium">{check.name}</p>
@@ -103,7 +108,7 @@ export function DriverKycPage() {
         </h2>
 
         <ul className="space-y-2">
-          {data?.documents.map((doc) => (
+          {data.documents.map((doc) => (
             <li key={doc.type} className="flex items-center justify-between text-[13px]">
               <span>{doc.type}</span>
 

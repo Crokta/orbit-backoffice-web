@@ -3,6 +3,7 @@ import { useState } from 'react'
 
 import { api } from '../../lib/api/client'
 import { cn } from '../../components/ui/cn'
+import { LoadError } from '../../components/ui/LoadError'
 
 interface Lead {
   readonly id: string
@@ -129,7 +130,9 @@ export function LeadsPage() {
         ))}
       </div>
 
-      {leads.isPending ? (
+      {leads.isError ? (
+        <LoadError error={leads.error} what="leads" onRetry={() => { void leads.refetch() }} />
+      ) : leads.isPending ? (
         <p className="rounded-lg border border-line-subtle bg-surface p-8 text-center text-[13px] text-fg-tertiary">
           Loading…
         </p>

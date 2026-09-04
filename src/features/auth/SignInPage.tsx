@@ -14,39 +14,24 @@ interface TokenPair {
   readonly mustChangePassword?: boolean
 }
 
-interface OtpChallenge {
-  readonly challengeId: string
-  readonly expiresAt: string
-  readonly resendAfterSeconds: number
-}
-
-/** Which credential the operator is presenting. */
-type Method = 'token' | 'password'
-
-/** Where in the flow we are. Email is always first. */
-type Step = 'identify' | 'code' | 'password' | 'change'
+/** Where in the flow we are. */
+type Step = 'credentials' | 'change'
 
 /**
  * Back-office sign-in.
  *
- * Two ways in, on purpose. A one-time code is the better credential — nothing to reuse,
- * nothing to phish twice — but a console that only accepts a code locks its operator out
- * whenever mail is slow, and the moment that matters is during an incident. A password is
- * the way back in when the code will not arrive.
- *
- * The email address is asked for once, before the choice, because both methods need it and
- * asking twice is the sort of small friction that makes people write the password down.
+ * Email and password, on one screen. There was an emailed-code option here and it has been
+ * removed: one-time codes are the mobile apps' business, where the phone number is the
+ * account and a code is the only credential a rider has. An operator at a desk has a
+ * password manager, and a console that mails a code on every sign-in adds a dependency on
+ * mail being fast at exactly the moment it usually is not — during an incident.
  */
 export function SignInPage() {
   const navigate = useNavigate()
 
   const [email, setEmail] = useState('')
-  const [method, setMethod] = useState<Method>('token')
-  const [step, setStep] = useState<Step>('identify')
-
-  const [code, setCode] = useState('')
   const [password, setPassword] = useState('')
-  const [challengeId, setChallengeId] = useState<string | null>(null)
+  const [step, setStep] = useState<Step>('credentials')
 
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -64,22 +49,7 @@ export function SignInPage() {
     goBackToWhereTheyWere()
   }
 
-  const requestCode = useMutation({
-    mutationFn: (): Promise<OtpChallenge> =>
-      api.post<OtpChallenge>('/v1/auth/email/otp', { json: { email } }),
-    onSuccess: (challenge) => {
-      setChallengeId(challenge.challengeId)
-      setStep('code')
-    },
-  })
-
-  const verifyCode = useMutation({
-    mutationFn: (): Promise<TokenPair> =>
-      api.post<TokenPair>('/v1/auth/email/otp/verify', { json: { challengeId, code } }),
-    onSuccess: land,
-  })
-
-  const signInWithPassword = useMutation({
+  const signIn = useMutation({
     mutationFn: (): Promise<TokenPair> =>
       api.post<TokenPair>('/v1/auth/password', { json: { email, password } }),
     onSuccess: land,
@@ -107,38 +77,21 @@ export function SignInPage() {
   function submit(event: SyntheticEvent) {
     event.preventDefault()
 
-    if (step === 'identify') {
-      if (method === 'token') {
-        requestCode.mutate()
-      } else {
-        setStep('password')
-      }
-      return
-    }
-
-    if (step === 'code') {
-      verifyCode.mutate()
-      return
-    }
-
-    if (step === 'password') {
-      signInWithPassword.mutate()
+    if (step === 'credentials') {
+      signIn.mutate()
       return
     }
 
     changePassword.mutate()
   }
 
-  const active =
-    step === 'identify'
-      ? requestCode
-      : step === 'code'
-        ? verifyCode
-        : step === 'password'
-          ? signInWithPassword
-          : changePassword
+  const active = step === 'credentials' ? signIn : changePassword
 
   const mismatch = newPassword.length > 0 && confirmPassword.length > 0 && newPassword !== confirmPassword
+  const tooShort = newPassword.length > 0 && newPassword.length < 12
+
+  const blocked =
+    step === 'change' && (mismatch || tooShort || newPassword.length === 0 || confirmPassword.length === 0)
 
   return (
     <div className="grid min-h-screen bg-canvas lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
@@ -151,15 +104,13 @@ export function SignInPage() {
               {step === 'change' ? 'Choose a new password' : 'Sign in'}
             </h1>
             <p className="mt-1.5 text-[13px] text-fg-secondary">
-              {step === 'identify' && 'Operations console for Orbit.'}
-              {step === 'code' && `We sent a six-digit code to ${email}.`}
-              {step === 'password' && `Signing in as ${email}.`}
+              {step === 'credentials' && 'Operations console for Orbit.'}
               {step === 'change' && 'Your password was set by somebody else. Replace it before continuing.'}
             </p>
           </header>
 
           <form onSubmit={submit} className="space-y-4">
-            {step === 'identify' && (
+            {step === 'credentials' && (
               <>
                 <Field
                   id="email"
@@ -172,34 +123,15 @@ export function SignInPage() {
                   autoFocus
                 />
 
-                <MethodChoice value={method} onChange={setMethod} />
+                <Field
+                  id="password"
+                  label="Password"
+                  type="password"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={setPassword}
+                />
               </>
-            )}
-
-            {step === 'code' && (
-              <Field
-                id="code"
-                label="Six-digit code"
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                placeholder="000000"
-                value={code}
-                onChange={(value) => { setCode(value.replace(/\D/g, '').slice(0, 6)) }}
-                className="tabular text-center text-[20px] tracking-[0.5em]"
-                autoFocus
-              />
-            )}
-
-            {step === 'password' && (
-              <Field
-                id="password"
-                label="Password"
-                type="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={setPassword}
-                autoFocus
-              />
             )}
 
             {step === 'change' && (
@@ -210,6 +142,7 @@ export function SignInPage() {
                   type="password"
                   autoComplete="new-password"
                   hint="At least 12 characters. Length beats punctuation."
+                  error={tooShort ? 'Too short — 12 characters minimum.' : undefined}
                   value={newPassword}
                   onChange={setNewPassword}
                   autoFocus
@@ -219,9 +152,9 @@ export function SignInPage() {
                   label="Confirm it"
                   type="password"
                   autoComplete="new-password"
+                  error={mismatch ? 'These do not match.' : undefined}
                   value={confirmPassword}
                   onChange={setConfirmPassword}
-                  error={mismatch ? 'These do not match.' : undefined}
                 />
               </>
             )}
@@ -234,93 +167,14 @@ export function SignInPage() {
               </p>
             )}
 
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={active.isPending || (step === 'change' && (mismatch || newPassword.length === 0))}
-            >
-              {step === 'identify' && (method === 'token' ? 'Email me a code' : 'Continue')}
-              {step === 'code' && 'Sign in'}
-              {step === 'password' && 'Sign in'}
-              {step === 'change' && 'Set password and continue'}
+            <Button type="submit" className="w-full" disabled={active.isPending || blocked}>
+              {step === 'credentials' && (signIn.isPending ? 'Signing in…' : 'Sign in')}
+              {step === 'change' && (changePassword.isPending ? 'Saving…' : 'Set password and continue')}
             </Button>
-
-            {step === 'code' && (
-              <Footnote
-                onBack={() => { setStep('identify'); setCode('') }}
-                onAlt={() => { requestCode.mutate() }}
-                altLabel="Send another"
-                disabled={requestCode.isPending}
-              />
-            )}
-
-            {step === 'password' && (
-              <Footnote
-                onBack={() => { setStep('identify'); setPassword('') }}
-                onAlt={() => { setMethod('token'); requestCode.mutate() }}
-                altLabel="Email me a code instead"
-                disabled={requestCode.isPending}
-              />
-            )}
           </form>
         </div>
       </main>
     </div>
-  )
-}
-
-/**
- * The two ways in, as a segmented control.
- *
- * Presented side by side rather than as a link under the form. A password fallback hidden
- * behind "having trouble?" is found by the people who least need it and missed by the
- * person locked out at 3am, which is the only time it matters.
- */
-function MethodChoice({
-  value,
-  onChange,
-}: {
-  readonly value: Method
-  readonly onChange: (value: Method) => void
-}) {
-  const options = [
-    { id: 'token' as const, label: 'Get a token', hint: 'A code by email. Nothing to remember.' },
-    { id: 'password' as const, label: 'Use password', hint: 'For when mail is slow.' },
-  ]
-
-  return (
-    <fieldset className="space-y-1.5">
-      <legend className="mb-1.5 text-[13px] font-medium text-fg-secondary">How would you like to sign in?</legend>
-
-      <div className="grid grid-cols-2 gap-2">
-        {options.map((option) => (
-          <button
-            key={option.id}
-            type="button"
-            onClick={() => { onChange(option.id) }}
-            aria-pressed={value === option.id}
-            className={cn(
-              'rounded-lg border p-3 text-left transition-colors',
-              value === option.id
-                ? 'border-line-brand bg-brand-subtle'
-                : 'border-line-subtle bg-surface hover:bg-hover',
-            )}
-          >
-            <span
-              className={cn(
-                'block text-[13px] font-medium',
-                value === option.id ? 'text-fg-brand' : 'text-fg',
-              )}
-            >
-              {option.label}
-            </span>
-            <span className="mt-0.5 block text-[11px] leading-[15px] text-fg-tertiary">
-              {option.hint}
-            </span>
-          </button>
-        ))}
-      </div>
-    </fieldset>
   )
 }
 
@@ -332,6 +186,7 @@ function Field({
   hint,
   error,
   className,
+  type,
   ...rest
 }: {
   readonly id: string
@@ -342,64 +197,101 @@ function Field({
   readonly error?: string | undefined
   readonly className?: string | undefined
 } & Omit<React.InputHTMLAttributes<HTMLInputElement>, 'id' | 'value' | 'onChange' | 'className'>) {
+  const [revealed, setRevealed] = useState(false)
+
+  // A password field is the one place a typo is invisible, and the cost of that typo is a
+  // failed attempt against a lockout counter. The toggle is the field's own concern rather
+  // than a separate component, so no password input in this console can be built without it.
+  const isPassword = type === 'password'
+  const resolvedType = isPassword && revealed ? 'text' : type
+
+  const describedBy = [
+    hint !== undefined ? `${id}-hint` : null,
+    error !== undefined ? `${id}-error` : null,
+  ].filter((value): value is string => value !== null)
+
   return (
     <div className="space-y-1.5">
       <label htmlFor={id} className="block text-[13px] font-medium text-fg-secondary">
         {label}
       </label>
 
-      <input
-        id={id}
-        value={value}
-        onChange={(event) => { onChange(event.target.value) }}
-        required
-        aria-invalid={error !== undefined}
-        aria-describedby={hint !== undefined ? `${id}-hint` : undefined}
-        className={cn(
-          'h-10 w-full rounded-md border bg-surface px-3 text-[13px] outline-none transition-colors',
-          'focus:border-line-brand focus:ring-2 focus:ring-[color:var(--bg-brand)]/20',
-          error === undefined ? 'border-line' : 'border-[color:var(--border-danger)]',
-          className,
-        )}
-        {...rest}
-      />
+      <div className="relative">
+        <input
+          id={id}
+          type={resolvedType}
+          value={value}
+          onChange={(event) => { onChange(event.target.value) }}
+          required
+          aria-invalid={error !== undefined}
+          aria-describedby={describedBy.length > 0 ? describedBy.join(' ') : undefined}
+          className={cn(
+            'h-10 w-full rounded-md border bg-surface px-3 text-[13px] outline-none transition-colors',
+            'focus:border-line-brand focus:ring-2 focus:ring-[color:var(--bg-brand)]/20',
+            error === undefined ? 'border-line' : 'border-[color:var(--border-danger)]',
+            isPassword && 'pr-10',
+            className,
+          )}
+          {...rest}
+        />
 
-      {hint !== undefined && (
+        {isPassword && (
+          <button
+            type="button"
+            onClick={() => { setRevealed((current) => !current) }}
+            // Not aria-pressed: this is not a toggle whose state the user tracks, it is a
+            // control whose label states what it will do next. Screen readers read the
+            // label, which changes, and that is the whole message.
+            aria-label={revealed ? 'Hide password' : 'Show password'}
+            aria-controls={id}
+            className={cn(
+              'absolute inset-y-0 right-0 grid w-10 place-items-center rounded-r-md',
+              'text-fg-tertiary transition-colors hover:text-fg',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--bg-brand)]/40',
+            )}
+            // Excluded from tab order between the field and the submit button: someone
+            // typing a password and pressing Tab expects the button they are about to
+            // press, not a control they did not ask for. It stays reachable by click and
+            // by shift-tabbing back.
+            tabIndex={-1}
+          >
+            <EyeIcon closed={revealed} />
+          </button>
+        )}
+      </div>
+
+      {hint !== undefined && error === undefined && (
         <p id={`${id}-hint`} className="text-[11px] text-fg-tertiary">
           {hint}
         </p>
       )}
 
-      {error !== undefined && <p className="text-[11px] text-fg-danger">{error}</p>}
+      {error !== undefined && (
+        <p id={`${id}-error`} className="text-[11px] text-fg-danger">
+          {error}
+        </p>
+      )}
     </div>
   )
 }
 
-function Footnote({
-  onBack,
-  onAlt,
-  altLabel,
-  disabled,
-}: {
-  readonly onBack: () => void
-  readonly onAlt: () => void
-  readonly altLabel: string
-  readonly disabled: boolean
-}) {
+/** Open eye when the password is hidden; struck through when it is showing. */
+function EyeIcon({ closed }: { readonly closed: boolean }) {
   return (
-    <div className="flex items-center justify-between pt-1 text-[12px]">
-      <button type="button" onClick={onBack} className="text-fg-tertiary hover:text-fg">
-        Use a different email
-      </button>
-      <button
-        type="button"
-        onClick={onAlt}
-        disabled={disabled}
-        className="text-fg-brand hover:underline disabled:opacity-50"
-      >
-        {altLabel}
-      </button>
-    </div>
+    <svg
+      aria-hidden
+      viewBox="0 0 20 20"
+      className="size-[18px]"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M1.8 10S4.9 4.6 10 4.6 18.2 10 18.2 10 15.1 15.4 10 15.4 1.8 10 1.8 10Z" />
+      <circle cx="10" cy="10" r="2.4" />
+      {closed && <path d="m3 17 14-14" />}
+    </svg>
   )
 }
 

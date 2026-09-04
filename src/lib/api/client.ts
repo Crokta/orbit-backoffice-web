@@ -34,9 +34,14 @@ interface RequestOptions extends Omit<RequestInit, 'body'> {
  * a burst of traffic against the identity service.
  */
 export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const response = await send(path, options)
+  // Resolved once, before the first attempt, so the retry below sends the SAME key. A key
+  // generated per attempt would defeat the deduplication it exists for: the retry would
+  // look like a new intent and be applied a second time.
+  const prepared = withIdempotencyKey(options)
 
-  if (response.status !== 401) {
+  const response = await send(path, prepared)
+
+  if (response.status !== 401 || !canRefresh(path)) {
     return finish<T>(response)
   }
 
@@ -46,7 +51,54 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
     throw new ApiError({ title: 'Your session has ended', status: 401, code: 'auth.session_expired' })
   }
 
-  return finish<T>(await send(path, options))
+  return finish<T>(await send(path, prepared))
+}
+
+/**
+ * Whether a 401 is worth trying to refresh away.
+ *
+ * Only when there was a session to begin with. A 401 from a sign-in attempt is the
+ * server's answer — the password was wrong — not an expired token, and there is no
+ * refresh cookie to trade in. Refreshing anyway fails, and the failure used to replace
+ * the real error with "Your session has ended", so every mistyped password reported the
+ * wrong reason and a locked account never said it was locked.
+ *
+ * The auth routes are excluded outright as well as by the token check: they are never
+ * bearer-authenticated, so a 401 from one is always about the credentials in the body.
+ */
+function canRefresh(path: string): boolean {
+  if (path.startsWith('/v1/auth/')) {
+    return false
+  }
+
+  return getAccessToken() !== null
+}
+
+/** Methods the gateway requires an Idempotency-Key on. */
+const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
+
+/**
+ * Gives every mutating request a key unless the caller chose one.
+ *
+ * The gateway rejects a keyless POST at the edge, and it does so for every route outside
+ * /v1/auth — including ones that do not look like the payments and state transitions the
+ * rule was written for. Changing a password is one, which meant the mandatory
+ * change-password step of a first sign-in failed with "The Idempotency-Key header is
+ * required on this request" before anyone could get in.
+ *
+ * Making the default safe is better than remembering per call site. A caller that needs a
+ * stable key across separate user actions still passes newIdempotencyKey() explicitly.
+ */
+function withIdempotencyKey(options: RequestOptions): RequestOptions {
+  if (options.idempotencyKey !== undefined) {
+    return options
+  }
+
+  if (!MUTATING_METHODS.has((options.method ?? 'GET').toUpperCase())) {
+    return options
+  }
+
+  return { ...options, idempotencyKey: newIdempotencyKey() }
 }
 
 async function send(path: string, options: RequestOptions): Promise<Response> {

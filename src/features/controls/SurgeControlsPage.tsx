@@ -5,6 +5,7 @@ import { Button } from '../../components/ui/Button'
 import { api, newIdempotencyKey } from '../../lib/api/client'
 import { ApiError } from '../../lib/api/problem'
 import { queryKeys } from '../../lib/query/client'
+import { LoadError } from '../../components/ui/LoadError'
 
 interface Zone {
   readonly zoneId: string
@@ -59,6 +60,10 @@ export function SurgeControlsPage() {
         Engaging the kill-switch pins every cell in a zone to 1.0×. It needs a second approver
         and takes effect on the next quote, not retroactively — fares already quoted stand.
       </p>
+
+      {zones.isError ? (
+        <LoadError error={zones.error} what="zones" onRetry={() => { void zones.refetch() }} />
+      ) : null}
 
       <div className="space-y-3">
         {zones.data?.map((zone) => (

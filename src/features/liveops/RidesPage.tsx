@@ -6,6 +6,7 @@ import { Money } from '../../components/ui/Money'
 import { StatusPill, type Status } from '../../components/ui/StatusPill'
 import { api } from '../../lib/api/client'
 import { queryKeys } from '../../lib/query/client'
+import { LoadError } from '../../components/ui/LoadError'
 
 interface RideRow {
   readonly rideId: string
@@ -86,14 +87,16 @@ export function RidesPage() {
           </thead>
 
           <tbody>
-            {rides.isPending ? (
+            {rides.isError ? (
+        <LoadError error={rides.error} what="the ride list" onRetry={() => { void rides.refetch() }} />
+      ) : rides.isPending ? (
               <tr>
                 <td colSpan={7} className="px-4 py-10 text-center text-fg-tertiary">
                   Loading…
                 </td>
               </tr>
             ) : (
-              rides.data?.items.map((ride) => (
+              rides.data.items.map((ride) => (
                 <tr key={ride.rideId} className="border-b border-line-subtle last:border-0 hover:bg-hover">
                   <td className="px-4 py-3">
                     <Link

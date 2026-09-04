@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Money } from '../../components/ui/Money'
 import { api } from '../../lib/api/client'
 import { queryKeys } from '../../lib/query/client'
+import { LoadError } from '../../components/ui/LoadError'
 
 interface Posting {
   readonly entryId: string
@@ -77,14 +78,16 @@ export function LedgerPage() {
           </thead>
 
           <tbody>
-            {postings.isPending ? (
+            {postings.isError ? (
+        <LoadError error={postings.error} what="the ledger" onRetry={() => { void postings.refetch() }} />
+      ) : postings.isPending ? (
               <tr>
                 <td colSpan={6} className="px-4 py-10 text-center text-fg-tertiary">
                   Loading postings…
                 </td>
               </tr>
             ) : (
-              postings.data?.items.map((posting, index) => (
+              postings.data.items.map((posting, index) => (
                 <tr
                   key={`${posting.entryId}-${String(index)}`}
                   className="border-b border-line-subtle last:border-0"

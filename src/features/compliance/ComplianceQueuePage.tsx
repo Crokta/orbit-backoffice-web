@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 
 import { api } from '../../lib/api/client'
+import { LoadError } from '../../components/ui/LoadError'
 
 interface KycItem {
   readonly driverId: string
@@ -18,7 +19,7 @@ interface KycItem {
  * cannot, and a queue sorted by anything else quietly starves whoever applied first.
  */
 export function ComplianceQueuePage() {
-  const { data, isPending } = useQuery({
+  const { data, isPending, isError, error, refetch } = useQuery({
     queryKey: ['compliance', 'queue'],
     queryFn: () => api.get<readonly KycItem[]>('/v1/admin/compliance/queue'),
   })
@@ -27,18 +28,22 @@ export function ComplianceQueuePage() {
     return <p className="text-[13px] text-fg-secondary">Loading queue…</p>
   }
 
+  if (isError) {
+    return <LoadError error={error} what="the KYC queue" onRetry={() => { void refetch() }} />
+  }
+
   return (
     <div className="max-w-4xl space-y-4">
       <h1 className="text-[28px] font-semibold leading-[34px]">KYC queue</h1>
 
-      {data?.length === 0 ? (
+      {data.length === 0 ? (
         <p className="rounded-lg border border-line-subtle bg-surface p-8 text-center text-[13px] text-fg-tertiary">
           Nobody is waiting.
         </p>
       ) : null}
 
       <ul className="divide-y divide-line-subtle overflow-hidden rounded-lg border border-line-subtle bg-surface">
-        {data?.map((item) => (
+        {data.map((item) => (
           <li key={item.driverId}>
             <Link
               to="/kyc/$driverId"

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Button } from '../../components/ui/Button'
 import { api, newIdempotencyKey } from '../../lib/api/client'
 import { queryKeys } from '../../lib/query/client'
+import { LoadError } from '../../components/ui/LoadError'
 
 interface FraudCase {
   readonly caseId: string
@@ -53,17 +54,21 @@ export function FraudAlertsPage() {
     return <p className="text-[13px] text-fg-secondary">Loading cases…</p>
   }
 
+  if (cases.isError) {
+    return <LoadError error={cases.error} what="fraud alerts" onRetry={() => { void cases.refetch() }} />
+  }
+
   return (
     <div className="max-w-4xl space-y-4">
       <h1 className="text-[28px] font-semibold leading-[34px]">Fraud alerts</h1>
 
-      {cases.data?.length === 0 ? (
+      {cases.data.length === 0 ? (
         <p className="rounded-lg border border-line-subtle bg-surface p-8 text-center text-[13px] text-fg-tertiary">
           Nothing is open.
         </p>
       ) : null}
 
-      {cases.data?.map((item) => (
+      {cases.data.map((item) => (
         <article key={item.caseId} className="rounded-lg border border-line-subtle bg-surface p-4">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
