@@ -5,18 +5,23 @@ import { StatusPill } from '../../components/ui/StatusPill'
 import { api } from '../../lib/api/client'
 
 interface LiveSnapshot {
-  readonly onlineDrivers: number
-  readonly idleDrivers: number
-  readonly ridesInProgress: number
-  readonly ridesSearching: number
-  readonly medianMatchSeconds: number
+  // Nullable, and the distinction matters on a wall display: null is "the service that
+  // owns this number did not answer", zero is "there are none". Showing an outage as a
+  // confident 0 is how a room decides nothing is happening.
+  readonly onlineDrivers: number | null
+  readonly idleDrivers: number | null
+  readonly ridesInProgress: number | null
+  readonly ridesSearching: number | null
+  readonly medianMatchSeconds: number | null
   readonly unmatchedOverSla: readonly UnmatchedRide[]
   readonly hotZones: readonly HotZone[]
+
+  /** Sections that did not answer, named so the screen can say which. */
+  readonly unavailable: readonly string[]
 }
 
 interface UnmatchedRide {
   readonly rideId: string
-  readonly pickupLabel: string
   readonly waitingSeconds: number
   readonly zoneId: string
 }
@@ -24,9 +29,7 @@ interface UnmatchedRide {
 interface HotZone {
   readonly zoneId: string
   readonly name: string
-  readonly surgeMultiplier: number
   readonly openRequests: number
-  readonly idleDrivers: number
   readonly killSwitchEngaged: boolean
 }
 
@@ -66,6 +69,17 @@ export function LiveOpsPage() {
         </p>
       </header>
 
+      {/* A section that did not answer is named. Without this the tiles just show "—"
+          and nobody can tell a quiet night from a dead service. */}
+      {data !== undefined && data.unavailable.length > 0 ? (
+        <p
+          role="status"
+          className="rounded-lg bg-warning-subtle px-4 py-2.5 text-[13px] text-fg-warning"
+        >
+          Not reporting: {data.unavailable.join(', ')}. Those figures are unknown, not zero.
+        </p>
+      ) : null}
+
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <Tile label="Online drivers" value={data?.onlineDrivers} loading={isPending} />
         <Tile label="Idle drivers" value={data?.idleDrivers} loading={isPending} />
@@ -74,7 +88,11 @@ export function LiveOpsPage() {
           label="Searching"
           value={data?.ridesSearching}
           loading={isPending}
-          tone={data !== undefined && data.ridesSearching > data.idleDrivers ? 'danger' : 'neutral'}
+          tone={
+            data?.ridesSearching != null && data.idleDrivers != null && data.ridesSearching > data.idleDrivers
+              ? 'danger'
+              : 'neutral'
+          }
         />
         <Tile
           label="Median match"
@@ -84,7 +102,7 @@ export function LiveOpsPage() {
           // The §3 target is a p50 under 20 seconds. Amber above it, so the number
           // that matters is the one that changes colour rather than one buried in a
           // dashboard nobody reads.
-          tone={data !== undefined && data.medianMatchSeconds > 20 ? 'warning' : 'neutral'}
+          tone={data?.medianMatchSeconds != null && data.medianMatchSeconds > 20 ? 'warning' : 'neutral'}
         />
       </div>
 
@@ -106,7 +124,7 @@ export function LiveOpsPage() {
                 >
                   <div className="min-w-0">
                     <p className="tabular text-[13px]">{ride.rideId}</p>
-                    <p className="truncate text-[13px] text-fg-secondary">{ride.pickupLabel}</p>
+                    <p className="truncate text-[13px] text-fg-secondary">{ride.zoneId}</p>
                   </div>
 
                   <span className="tabular text-[15px] font-medium text-fg-danger">
@@ -126,7 +144,7 @@ export function LiveOpsPage() {
           <table className="w-full min-w-[640px] border-collapse text-[13px]">
             <thead>
               <tr className="border-b border-line-subtle">
-                {['Zone', 'Surge', 'Open requests', 'Idle drivers', 'Kill switch'].map((header) => (
+                {['Zone', 'Open requests', 'Kill switch'].map((header) => (
                   <th
                     key={header}
                     scope="col"
@@ -139,16 +157,18 @@ export function LiveOpsPage() {
             </thead>
 
             <tbody>
+              {data !== undefined && data.hotZones.length === 0 ? (
+                <tr>
+                  <td colSpan={3} className="px-4 py-8 text-center text-[13px] text-fg-tertiary">
+                    No zone has open requests on it.
+                  </td>
+                </tr>
+              ) : null}
+
               {data?.hotZones.map((zone) => (
                 <tr key={zone.zoneId} className="border-b border-line-subtle last:border-0">
                   <td className="px-4 py-3">{zone.name}</td>
-                  <td className="px-4 py-3">
-                    <span className={zone.surgeMultiplier > 1 ? 'tabular text-fg-surge' : 'tabular'}>
-                      {zone.surgeMultiplier.toFixed(1)}×
-                    </span>
-                  </td>
                   <td className="tabular px-4 py-3">{zone.openRequests}</td>
-                  <td className="tabular px-4 py-3">{zone.idleDrivers}</td>
                   <td className="px-4 py-3">
                     {zone.killSwitchEngaged ? (
                       <StatusPill status="cancelled" />
@@ -174,7 +194,7 @@ function Tile({
   tone = 'neutral',
 }: {
   readonly label: string
-  readonly value: number | undefined
+  readonly value: number | null | undefined
   readonly suffix?: string
   readonly loading: boolean
   readonly tone?: 'neutral' | 'warning' | 'danger'
