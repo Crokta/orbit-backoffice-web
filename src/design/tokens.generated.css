@@ -1,126 +1,144 @@
+/*
+ * Orbit Orange on slate. The same scheme as the public website, the guide and every email
+ * the platform sends, so an operator moving between them sees one product.
+ *
+ * Hand-maintained, not extracted from Figma. It was generated once and has since diverged
+ * deliberately; regenerating it from the old file would revert the whole console to blue.
+ *
+ * Two rules to keep true when editing:
+ *
+ *   * In LIGHT, --bg-brand-hover is DARKER than --bg-brand. On a light ground a hover state
+ *     has to gain contrast; brightening it makes the control look disabled.
+ *   * --text-brand is not --bg-brand. #FF6B00 is 2.9:1 on white, which is correct for a
+ *     filled button with white text on it and unreadable as an orange label.
+ *
+ * The surface hierarchy is the console's, not the website's: grey page, white cards. A
+ * dense table needs to sit on a white card against a grey page to read as a card at all.
+ */
+
 :root,
 [data-theme='light'] {
   /* Surfaces */
-  --bg-canvas: #F4F6F8;
+  --bg-canvas: #F1F5F9;
   --bg-surface: #FFFFFF;
   --bg-surface-raised: #FFFFFF;
-  --bg-surface-sunken: #F4F6F8;
+  --bg-surface-sunken: #F8FAFC;
   --bg-overlay: #FFFFFF;
-  --bg-subtle: #E4E7EB;
-  --bg-hover: #E4E7EB;
-  --bg-pressed: #C3C8D0;
-  --bg-disabled: #E4E7EB;
-  --bg-inverse: #08090B;
-  --bg-brand: #1B5FD9;
-  --bg-brand-hover: #1546A6;
-  --bg-brand-subtle: #EBF2FF;
-  --bg-success: #15803D;
-  --bg-success-subtle: #DCFCE7;
+  --bg-subtle: #F1F5F9;
+  --bg-hover: #F1F5F9;
+  --bg-pressed: #E2E8F0;
+  --bg-disabled: #E2E8F0;
+  --bg-inverse: #0F172A;
+  --bg-brand: #FF6B00;
+  --bg-brand-hover: #E05D00;
+  --bg-brand-subtle: #FFF3EB;
+  --bg-success: #059669;
+  --bg-success-subtle: #D1FAE5;
   --bg-warning: #F59E0B;
   --bg-warning-subtle: #FEF3C7;
-  --bg-danger: #B91C1C;
+  --bg-danger: #DC2626;
   --bg-danger-subtle: #FEE2E2;
-  --bg-surge: #9333EA;
-  --bg-surge-subtle: #F3E8FF;
+  --bg-surge: #C2410C;
+  --bg-surge-subtle: #FFEDD5;
 
   /* Text */
-  --text-primary: #08090B;
-  --text-secondary: #383D45;
-  --text-tertiary: #4B515B;
-  --text-disabled: #6B7280;
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-tertiary: #64748B;
+  --text-disabled: #94A3B8;
   --text-inverse: #FFFFFF;
   --text-on-brand: #FFFFFF;
-  --text-brand: #1B5FD9;
-  --text-success: #15803D;
+  --text-brand: #B34700;
+  --text-success: #047857;
   --text-warning: #B45309;
   --text-danger: #B91C1C;
-  --text-surge: #9333EA;
+  --text-surge: #C2410C;
 
   /* Borders */
-  --border-subtle: #E4E7EB;
-  --border-default: #C3C8D0;
-  --border-strong: #9AA1AC;
-  --border-brand: #2E7DFF;
-  --border-focus: #2E7DFF;
-  --border-success: #16A34A;
+  --border-subtle: #F1F5F9;
+  --border-default: #E2E8F0;
+  --border-strong: #CBD5E1;
+  --border-brand: #FF6B00;
+  --border-focus: #FF6B00;
+  --border-success: #059669;
   --border-warning: #F59E0B;
-  --border-danger: #EF4444;
+  --border-danger: #DC2626;
 
   /* Map */
-  --map-base: #F4F6F8;
-  --map-road: #E4E7EB;
-  --map-route: #2E7DFF;
-  --map-pickup: #16A34A;
-  --map-dropoff: #EF4444;
-  --map-driver: #08090B;
+  --map-base: #F8FAFC;
+  --map-road: #E2E8F0;
+  --map-route: #FF6B00;
+  --map-pickup: #0F172A;
+  --map-dropoff: #FF6B00;
+  --map-driver: #0F172A;
 
   /* Ride status */
-  --status-online: #15803D;
-  --status-offline: #6B7280;
-  --status-in-trip: #2E7DFF;
-  --status-cancelled: #EF4444;
-  --status-arrears: #F59E0B;
+  --status-online: #047857;
+  --status-offline: #64748B;
+  --status-in-trip: #C2410C;
+  --status-cancelled: #DC2626;
+  --status-arrears: #B45309;
 }
 
 [data-theme='dark'] {
   /* Surfaces */
-  --bg-canvas: #08090B;
-  --bg-surface: #0E1013;
-  --bg-surface-raised: #141619;
-  --bg-surface-sunken: #000000;
-  --bg-overlay: #1A1D22;
-  --bg-subtle: #1A1D22;
-  --bg-hover: #212429;
-  --bg-pressed: #292D34;
-  --bg-disabled: #1A1D22;
-  --bg-inverse: #FFFFFF;
-  --bg-brand: #1B5FD9;
-  --bg-brand-hover: #2E7DFF;
-  --bg-brand-subtle: #0A2149;
-  --bg-success: #15803D;
-  --bg-success-subtle: #0A2E16;
+  --bg-canvas: #020617;
+  --bg-surface: #0F172A;
+  --bg-surface-raised: #1E293B;
+  --bg-surface-sunken: #020617;
+  --bg-overlay: #1E293B;
+  --bg-subtle: #1E293B;
+  --bg-hover: #1E293B;
+  --bg-pressed: #334155;
+  --bg-disabled: #1E293B;
+  --bg-inverse: #F8FAFC;
+  --bg-brand: #FF7A1A;
+  --bg-brand-hover: #FF8C38;
+  --bg-brand-subtle: #2D1808;
+  --bg-success: #059669;
+  --bg-success-subtle: #022C22;
   --bg-warning: #F59E0B;
-  --bg-warning-subtle: #3D1E03;
-  --bg-danger: #B91C1C;
-  --bg-danger-subtle: #3B0A0A;
-  --bg-surge: #9333EA;
-  --bg-surge-subtle: #2E1065;
+  --bg-warning-subtle: #451A03;
+  --bg-danger: #DC2626;
+  --bg-danger-subtle: #450A0A;
+  --bg-surge: #EA580C;
+  --bg-surge-subtle: #431407;
 
   /* Text */
-  --text-primary: #FFFFFF;
-  --text-secondary: #C3C8D0;
-  --text-tertiary: #9AA1AC;
-  --text-disabled: #6B7280;
-  --text-inverse: #08090B;
-  --text-on-brand: #FFFFFF;
-  --text-brand: #7FA8FF;
-  --text-success: #4ADE80;
+  --text-primary: #F8FAFC;
+  --text-secondary: #CBD5E1;
+  --text-tertiary: #94A3B8;
+  --text-disabled: #64748B;
+  --text-inverse: #0F172A;
+  --text-on-brand: #0F172A;
+  --text-brand: #FF9E5C;
+  --text-success: #6EE7B7;
   --text-warning: #FCD34D;
   --text-danger: #FCA5A5;
-  --text-surge: #C084FC;
+  --text-surge: #FDBA74;
 
   /* Borders */
-  --border-subtle: #1A1D22;
-  --border-default: #292D34;
-  --border-strong: #383D45;
-  --border-brand: #2E7DFF;
-  --border-focus: #4D8AFF;
-  --border-success: #16A34A;
+  --border-subtle: #1E293B;
+  --border-default: #334155;
+  --border-strong: #475569;
+  --border-brand: #FF7A1A;
+  --border-focus: #FF8C38;
+  --border-success: #10B981;
   --border-warning: #F59E0B;
   --border-danger: #EF4444;
 
   /* Map */
-  --map-base: #0E1013;
-  --map-road: #212429;
-  --map-route: #4D8AFF;
-  --map-pickup: #22C55E;
-  --map-dropoff: #F87171;
-  --map-driver: #FFFFFF;
+  --map-base: #0F172A;
+  --map-road: #1E293B;
+  --map-route: #FF7A1A;
+  --map-pickup: #F8FAFC;
+  --map-dropoff: #FF7A1A;
+  --map-driver: #F8FAFC;
 
   /* Ride status */
-  --status-online: #22C55E;
-  --status-offline: #6B7280;
-  --status-in-trip: #4D8AFF;
+  --status-online: #34D399;
+  --status-offline: #64748B;
+  --status-in-trip: #FB923C;
   --status-cancelled: #F87171;
   --status-arrears: #FBBF24;
 }

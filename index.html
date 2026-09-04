@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -13,10 +13,15 @@
     <script>
       try {
         var stored = localStorage.getItem('orbit-theme')
-        // Dark by default, unlike the enterprise app. Live-ops screens sit on wall
-        // displays in rooms that stay dim for hours, and a white canvas at 3 a.m. is
-        // the reason people turn the monitor away.
-        document.documentElement.dataset.theme = stored || 'dark'
+        // Light by default, matching the public site, the enterprise console and every
+        // Orbit email, so an operator moving between them sees one product rather than
+        // three. It does not follow the system preference: a laptop set to dark mode
+        // should not decide what the company's console looks like.
+        //
+        // Dark is still a first-class theme here — repainted to the same Orbit Orange at
+        // the same time — and it is one click away on the toggle, which is what a night
+        // shift on a dim wall display should use. The choice is remembered per browser.
+        document.documentElement.dataset.theme = stored || 'light'
       } catch (_) {
         /* Private mode, or storage disabled. The light default already applies. */
       }

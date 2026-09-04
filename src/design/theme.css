@@ -1,10 +1,11 @@
 /*
  * The Orbit design system, as Tailwind 4 sees it.
  *
- * `tokens.generated.css` is extracted from the Figma file and must not be edited by
- * hand — regenerate it instead. This file maps those tokens onto Tailwind's theme so
- * that `bg-surface` and `--bg-surface` are the same thing rather than two things that
- * happen to agree today.
+ * `tokens.generated.css` holds the palette. It began as a Figma extract and is now
+ * hand-maintained — it was repainted to Orbit Orange to match the website, and
+ * regenerating it from the old source would revert the console to blue. This file maps
+ * those tokens onto Tailwind's theme so that `bg-surface` and `--bg-surface` are the same
+ * thing rather than two things that happen to agree today.
  */
 
 @import 'tailwindcss';
