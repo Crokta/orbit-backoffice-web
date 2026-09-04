@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 
+import { LoadError } from '../../components/ui/LoadError'
 import { api } from '../../lib/api/client'
 
 interface AuditEntry {
@@ -52,7 +53,23 @@ export function AuditLogPage() {
         />
       </div>
 
-      {entries.data?.length === 0 ? (
+      {/* Three states, not one. Below the threshold the query has not run, so an empty
+          list here would read as "nothing was done" rather than "nothing was asked". */}
+      {resource.length <= 3 ? (
+        <p className="rounded-lg border border-line-subtle bg-surface p-8 text-center text-[13px] text-fg-tertiary">
+          Name a resource to see what has been done to it.
+        </p>
+      ) : null}
+
+      {entries.isError ? (
+        <LoadError
+          error={entries.error}
+          what="the audit trail"
+          onRetry={() => { void entries.refetch() }}
+        />
+      ) : null}
+
+      {resource.length > 3 && !entries.isError && entries.data?.length === 0 ? (
         <p className="rounded-lg border border-line-subtle bg-surface p-8 text-center text-[13px] text-fg-tertiary">
           Nothing has been done to that resource.
         </p>
