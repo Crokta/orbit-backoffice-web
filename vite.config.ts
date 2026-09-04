@@ -21,6 +21,14 @@ export default defineConfig({
       '/api': {
         target: process.env.VITE_GATEWAY_URL ?? 'http://localhost:8080',
         changeOrigin: true,
+
+        // The prefix is stripped. The client prefixes every request with /api so that one
+        // origin serves both the app and its API, but the gateway routes /v1/** and knows
+        // nothing about /api — without this rewrite every call in development reached the
+        // gateway as /api/v1/... , fell through every route, and came back as a bare 401
+        // that looks exactly like a rejected credential. Neither console could talk to the
+        // platform at all, and the symptom pointed at authentication rather than routing.
+        rewrite: (path) => path.replace(/^\/api/, ''),
       },
     },
   },

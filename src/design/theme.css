@@ -69,18 +69,56 @@
   --color-map-driver: var(--map-driver);
 
   /* Spacing, straight off the Figma scale. */
-  --spacing-2xs: 2px;
-  --spacing-xs: 4px;
-  --spacing-sm: 8px;
-  --spacing-md: 12px;
-  --spacing-base: 16px;
-  --spacing-lg: 20px;
-  --spacing-xl: 24px;
-  --spacing-2xl: 32px;
-  --spacing-3xl: 40px;
-  --spacing-4xl: 48px;
-  --spacing-5xl: 64px;
-  --spacing-6xl: 80px;
+
+  /* --- Container scale --------------------------------------------------
+     Restored explicitly, and it must stay.
+
+     This theme defines a *named* spacing scale — --spacing-sm, --spacing-md,
+     --spacing-4xl — and in Tailwind 4 those names shadow the container scale that
+     `max-w-*` resolves against. The console shipped with `max-w-sm` computing to 8px,
+     `max-w-4xl` to 48px, and `max-w-lg` to `none`: every page that constrained its
+     width was either a few pixels wide or unconstrained, and nothing reported it
+     because the classes are perfectly valid.
+
+     Removing these lines re-breaks every `max-w-*` in the app. */
+  --container-3xs: 16rem;
+  --container-2xs: 18rem;
+  --container-xs: 20rem;
+  --container-sm: 24rem;
+  --container-md: 28rem;
+  --container-lg: 32rem;
+  --container-xl: 36rem;
+  --container-2xl: 42rem;
+  --container-3xl: 48rem;
+  --container-4xl: 56rem;
+  --container-5xl: 64rem;
+  --container-6xl: 72rem;
+  --container-7xl: 80rem;
+
+  /* --- Step scale ---------------------------------------------------------
+     Named --step-*, not --spacing-*, and the rename is load-bearing.
+
+     Tailwind 4 resolves `max-w-sm`, `max-w-4xl` and friends against the spacing
+     namespace before the container one, so declaring --spacing-sm: 8px silently
+     redefined `max-w-sm` as 8 pixels. The console shipped with every width-constrained
+     page either a few pixels wide or unconstrained, and nothing reported it because the
+     classes are all perfectly valid Tailwind.
+
+     Nothing consumed these as utilities — no p-sm, no gap-lg anywhere in the app — so
+     they are kept under an inert prefix as the design system's documented step scale.
+     Moving them back under --spacing-* re-breaks every max-w-* in the app. */
+  --step-2xs: 2px;
+  --step-xs: 4px;
+  --step-sm: 8px;
+  --step-md: 12px;
+  --step-base: 16px;
+  --step-lg: 20px;
+  --step-xl: 24px;
+  --step-2xl: 32px;
+  --step-3xl: 40px;
+  --step-4xl: 48px;
+  --step-5xl: 64px;
+  --step-6xl: 80px;
 
   --radius-xs: 4px;
   --radius-sm: 6px;
