@@ -72,10 +72,12 @@ export function SurgeControlsPage() {
               <div>
                 <p className="text-[15px] font-medium">{zone.name}</p>
 
+                {/* "Current" was the lead-in to a surge multiplier that is no longer
+                    shown, and read as nonsense in front of a market name. */}
                 <p className="text-[13px] text-fg-secondary">
-                  Current{' '}
-                  <span className="tabular">{zone.market}</span>{' '}
-                  · {zone.isOperating ? 'operating' : 'not operating'}
+                  <span className="capitalize">{zone.market}</span>
+                  {' · '}
+                  {zone.isOperating ? 'Operating' : 'Not operating'}
                 </p>
 
                 {zone.killSwitchEngaged ? (

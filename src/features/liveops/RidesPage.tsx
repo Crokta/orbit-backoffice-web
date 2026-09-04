@@ -11,12 +11,20 @@ import { LoadError } from '../../components/ui/LoadError'
 interface RideRow {
   readonly rideId: string
   readonly state: string
-  readonly riderName: string
-  readonly driverName: string | null
+
+  // Ids, not names. Resolving a rider and a driver name per row would be two lookups
+  // against two other services for every line of this table — a hundred round trips to
+  // draw fifty rows. The route is what an operator scans for anyway, and the ride id
+  // links through to the detail page, which does fan out for the names of the one ride
+  // somebody actually opened.
+  readonly riderId: string
+  readonly driverId: string | null
+  readonly zoneId: string | null
+  readonly pickupLabel: string
+  readonly dropoffLabel: string
   readonly fareMinor: number
   readonly currency: string
   readonly requestedAt: string
-  readonly zoneName: string
 }
 
 interface Page<T> {
@@ -72,7 +80,7 @@ export function RidesPage() {
         <table className="w-full min-w-[860px] border-collapse text-[13px]">
           <thead>
             <tr className="border-b border-line-subtle">
-              {['Ride', 'Status', 'Rider', 'Driver', 'Zone', 'Requested', 'Fare'].map((header, index) => (
+              {['Ride', 'Status', 'Route', 'Rider', 'Driver', 'Requested', 'Fare'].map((header, index) => (
                 <th
                   key={header}
                   scope="col"
@@ -110,18 +118,28 @@ export function RidesPage() {
                     <Link
                       to="/ride/$rideId"
                       params={{ rideId: ride.rideId }}
-                      className="tabular text-fg-brand underline-offset-2 hover:underline"
+                      className="tabular whitespace-nowrap text-fg-brand underline-offset-2 hover:underline"
+                      title={ride.rideId}
                     >
-                      {ride.rideId}
+                      {ride.rideId.split('_').slice(0, 2).join('_')}
                     </Link>
                   </td>
                   <td className="px-4 py-3">
                     <StatusPill status={toStatus(ride.state)} />
                   </td>
-                  <td className="px-4 py-3">{ride.riderName}</td>
-                  <td className="px-4 py-3 text-fg-secondary">{ride.driverName ?? '—'}</td>
-                  <td className="px-4 py-3 text-fg-secondary">{ride.zoneName}</td>
-                  <td className="px-4 py-3 text-fg-secondary">
+                  <td className="px-4 py-3">
+                    <span className="block">{ride.pickupLabel}</span>
+                    <span className="block text-[12px] text-fg-tertiary">
+                      to {ride.dropoffLabel}
+                    </span>
+                  </td>
+                  <td className="tabular whitespace-nowrap px-4 py-3 text-fg-secondary">
+                    {ride.riderId}
+                  </td>
+                  <td className="tabular whitespace-nowrap px-4 py-3 text-fg-secondary">
+                    {ride.driverId ?? '—'}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-fg-secondary">
                     {new Date(ride.requestedAt).toLocaleString('en-NG')}
                   </td>
                   <td className="px-4 py-3 text-right">
@@ -145,7 +163,7 @@ function toStatus(state: string): Status {
     case 'Arrived':
       return 'online'
     case 'Completed':
-      return 'approved'
+      return 'completed'
     case 'Cancelled':
     case 'Expired':
       return 'cancelled'

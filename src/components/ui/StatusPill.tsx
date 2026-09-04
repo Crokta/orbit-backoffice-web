@@ -10,6 +10,7 @@ export type Status =
   | 'pending'
   | 'approved'
   | 'rejected'
+  | 'completed'
 
 const STYLES: Record<Status, string> = {
   // Straight off the Figma status ramp. Colour is never the only signal — each pill
@@ -23,6 +24,11 @@ const STYLES: Record<Status, string> = {
   pending: 'bg-warning-subtle text-fg-warning',
   approved: 'bg-success-subtle text-fg-success',
   rejected: 'bg-danger-subtle text-fg-danger',
+
+  // Shares the approved styling and not its label. A finished trip is not an approval,
+  // and a ride list that says "Approved" against a completed ride is telling an operator
+  // something that is not true of it.
+  completed: 'bg-success-subtle text-fg-success',
 }
 
 const LABELS: Record<Status, string> = {
@@ -34,6 +40,7 @@ const LABELS: Record<Status, string> = {
   pending: 'Pending',
   approved: 'Approved',
   rejected: 'Rejected',
+  completed: 'Completed',
 }
 
 export function StatusPill({ status, className }: { readonly status: Status; readonly className?: string }) {
