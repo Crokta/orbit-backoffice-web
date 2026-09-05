@@ -76,7 +76,7 @@ export function RideDetailPage() {
 
   const audit = useQuery({
     queryKey: queryKeys.rides.audit(rideId),
-    queryFn: () => api.get<readonly AuditEntry[]>(`/v1/admin/rides/${rideId}/audit`),
+    queryFn: () => api.get<{ readonly items: readonly AuditEntry[]; readonly nextCursor: string | null }>(`/v1/admin/rides/${rideId}/audit`, { query: { limit: 50 } }),
   })
 
   if (overview.isPending) {
@@ -187,11 +187,11 @@ export function RideDetailPage() {
       />
 
       <Panel title="What has been done to this ride">
-        {audit.data?.length === 0 ? (
+        {audit.data?.items.length === 0 ? (
           <p className="text-[13px] text-fg-tertiary">Nothing. No operator has touched it.</p>
         ) : (
           <ul className="space-y-2">
-            {audit.data?.map((entry) => (
+            {audit.data?.items.map((entry) => (
               <li key={entry.id} className="border-l-2 border-line pl-3">
                 <p className="text-[13px]">
                   <span className="font-medium">{entry.actorId}</span> — {entry.action}

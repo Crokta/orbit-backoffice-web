@@ -1,11 +1,13 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMemo, useState } from 'react'
 
 import { Button } from '../../components/ui/Button'
 import { LoadError } from '../../components/ui/LoadError'
 import { api, newIdempotencyKey } from '../../lib/api/client'
 import { ApiError } from '../../lib/api/problem'
+import { usePagedList, useDebounced, type Page } from '../../lib/paging'
 import { queryKeys } from '../../lib/query/client'
+import { ExportButton, FilterSelect, ListToolbar, Pagination, SearchBox } from '../shared/ListControls'
 
 interface RateCard {
   readonly ruleId: string
@@ -62,9 +64,19 @@ export function CommissionsPage() {
   const [percentInput, setPercentInput] = useState('')
   const [reason, setReason] = useState('')
 
-  const rateCards = useQuery({
-    queryKey: queryKeys.commissions.all,
-    queryFn: () => api.get<readonly RateCard[]>('/v1/admin/commissions'),
+  const [search, setSearch] = useState('')
+  const [vehicleClass, setVehicleClass] = useState<'any' | 'Economy' | 'Comfort' | 'Xl'>('any')
+  const q = useDebounced(search.trim())
+  const filters = useMemo(
+    () => ({ q: q.length === 0 ? undefined : q, vehicleClass: vehicleClass === 'any' ? undefined : vehicleClass }),
+    [q, vehicleClass],
+  )
+
+  const rateCards = usePagedList<RateCard, typeof filters>({
+    key: queryKeys.commissions.all,
+    filters,
+    fetchPage: (params) => api.get<Page<RateCard>>('/v1/admin/commissions', { query: { ...params } }),
+    initialLimit: 25,
   })
 
   const publish = useMutation({
@@ -105,25 +117,45 @@ export function CommissionsPage() {
         at, and drivers see the new figure on their next offer.
       </p>
 
-      {rateCards.isError ? (
+      <ListToolbar actions={<ExportButton path="/v1/admin/commissions/export.csv" query={filters} filename="orbit-commissions.csv" />}>
+        <SearchBox value={search} onChange={setSearch} placeholder="Zone, class or rule version" />
+        <FilterSelect
+          label="Vehicle class"
+          value={vehicleClass}
+          onChange={setVehicleClass}
+          options={[
+            { value: 'any', label: 'Any class' },
+            { value: 'Economy', label: 'Economy' },
+            { value: 'Comfort', label: 'Comfort' },
+            { value: 'Xl', label: 'XL' },
+          ]}
+        />
+      </ListToolbar>
+
+      {rateCards.query.isError ? (
         <LoadError
-          error={rateCards.error}
+          error={rateCards.query.error}
           what="commission rates"
           onRetry={() => {
-            void rateCards.refetch()
+            void rateCards.query.refetch()
           }}
         />
       ) : null}
 
-      {rateCards.data?.length === 0 ? (
+      {rateCards.query.isPending ? (
+        <p className="text-[13px] text-fg-secondary">Loading rate cards…</p>
+      ) : null}
+
+      {!rateCards.query.isPending && !rateCards.query.isError && rateCards.items.length === 0 ? (
         <p className="rounded-lg border border-line-subtle bg-surface px-4 py-6 text-[13px] text-fg-secondary">
-          No rate cards are in force. Commission is set per zone and vehicle class, and there is
-          nothing here until a zone has been priced.
+          {q.length > 0 || vehicleClass !== 'any'
+            ? 'No rate card matches that.'
+            : 'No rate cards are in force. Commission is set per zone and vehicle class, and there is nothing here until a zone has been priced.'}
         </p>
       ) : null}
 
       <div className="space-y-3">
-        {rateCards.data?.map((card) => {
+        {rateCards.items.map((card) => {
           const isEditing = editing?.ruleId === card.ruleId
           const driverShare = 1 - card.commissionRate
 
@@ -290,6 +322,8 @@ export function CommissionsPage() {
             : 'The change could not be raised.'}
         </p>
       ) : null}
+
+      <Pagination list={rateCards} />
     </div>
   )
 }

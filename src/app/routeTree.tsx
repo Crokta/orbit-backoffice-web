@@ -8,6 +8,7 @@ import { ComplianceQueuePage } from '../features/compliance/ComplianceQueuePage'
 import { DriverKycPage } from '../features/compliance/DriverKycPage'
 import { FraudAlertsPage } from '../features/compliance/FraudAlertsPage'
 import { LeadsPage } from '../features/growth/LeadsPage'
+import { LedgerAccountPage } from '../features/finance/LedgerAccountPage'
 import { LedgerPage } from '../features/finance/LedgerPage'
 import { LiveOpsPage } from '../features/liveops/LiveOpsPage'
 import { RideDetailPage } from '../features/liveops/RideDetailPage'
@@ -62,6 +63,12 @@ const rideDetailRoute = createRoute({
   component: RideDetailPage,
 })
 
+const ledgerAccountRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: '/ledger/$account',
+  component: LedgerAccountPage,
+})
+
 const driverKycRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: '/kyc/$driverId',
@@ -95,6 +102,7 @@ export const routeTree = rootRoute.addChildren([
   signInRoute,
   authenticatedRoute.addChildren([
     rideDetailRoute,
+    ledgerAccountRoute,
     driverKycRoute,
     ...flatRoutes.map((route) =>
       createRoute({ getParentRoute: () => authenticatedRoute, path: route.path, component: route.component }),

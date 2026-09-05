@@ -1,14 +1,13 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 
 import { liveSnapshotQuery } from '../liveops/snapshot'
 import { api } from '../../lib/api/client'
-
-interface DriverPage {
-  readonly items: readonly DriverRow[]
-  readonly nextCursor: string | null
-}
+import { useDebounced, usePagedList, type Page } from '../../lib/paging'
+import { queryKeys } from '../../lib/query/client'
+import { ExportButton, FilterSelect, ListToolbar, Pagination, SearchBox } from '../shared/ListControls'
+import { LoadError } from '../../components/ui/LoadError'
 
 interface DriverRow {
   readonly driverId: string
@@ -27,46 +26,45 @@ interface WaitingDriver {
   readonly documentsOutstanding: readonly string[]
 }
 
+interface DriverFilters {
+  readonly q: string | undefined
+  readonly status: string
+}
+
+const STATUSES = ['all', 'Online', 'Offline', 'Idle', 'OnTrip', 'Paused'] as const
+
 /**
  * The fleet, as far as the platform can currently describe it.
  *
  * Two questions, from the two services that can actually answer them: how much of the
  * fleet is working right now (location's presence keys), and who is stuck on the way in
- * (identity's compliance queue). There is deliberately no driver directory here — see
- * the note at the foot of the page.
+ * (identity's compliance queue). The directory beneath is searched, filtered and paged by
+ * the user service.
  */
 export function DriversPage() {
   const { data: snapshot, isPending: snapshotPending } = useQuery(liveSnapshotQuery)
 
   const queue = useQuery({
-    queryKey: ['compliance', 'queue'],
-    queryFn: () => api.get<readonly WaitingDriver[]>('/v1/admin/compliance/queue'),
+    queryKey: ['compliance', 'queue', 'preview'],
+    queryFn: () => api.get<Page<WaitingDriver>>('/v1/admin/compliance/queue', { query: { limit: 5 } }),
     refetchInterval: 60_000,
   })
 
   const [search, setSearch] = useState('')
-  const [status, setStatus] = useState('all')
+  const [status, setStatus] = useState<(typeof STATUSES)[number]>('all')
+  const q = useDebounced(search.trim())
 
-  // Cursors, not a page number. The endpoint is keyset-paged because a fleet is appended
-  // to while somebody reads it, so "back" means the cursor we came from rather than
-  // page - 1 — which is why this is a stack and not an integer.
-  const [cursors, setCursors] = useState<readonly string[]>([])
-  const cursor = cursors.at(-1) ?? null
+  const filters = useMemo<DriverFilters>(() => ({ q: q.length === 0 ? undefined : q, status }), [q, status])
 
-  const directory = useQuery({
-    queryKey: ['drivers', { search, status, cursor }],
-    queryFn: () =>
-      api.get<DriverPage>('/v1/admin/drivers', {
-        query: { query: search || undefined, status, cursor: cursor ?? undefined },
-      }),
-
-    // The table keeps the previous page on screen while the next one loads. A directory
-    // that blanks between pages is one an agent loses their place in.
-    placeholderData: keepPreviousData,
+  const directory = usePagedList<DriverRow, DriverFilters>({
+    key: queryKeys.drivers.all,
+    filters,
+    fetchPage: (params) => api.get<Page<DriverRow>>('/v1/admin/drivers', { query: { ...params } }),
   })
 
   const online = snapshot?.onlineDrivers ?? null
   const idle = snapshot?.idleDrivers ?? null
+  const waiting = queue.data?.items ?? []
 
   return (
     <div className="space-y-5">
@@ -89,7 +87,7 @@ export function DriversPage() {
           <h2 className="text-[15px] font-semibold">Waiting on compliance</h2>
 
           <Link to="/compliance" className="text-[12px] text-fg-brand hover:underline">
-            Open the queue
+            Open the queue{queue.data?.nextCursor != null ? ' (more waiting)' : ''}
           </Link>
         </div>
 
@@ -97,13 +95,13 @@ export function DriversPage() {
           <p className="rounded-xl border border-line-subtle bg-surface p-6 text-center text-[13px] text-fg-tertiary">
             Loading…
           </p>
-        ) : queue.data === undefined || queue.data.length === 0 ? (
+        ) : waiting.length === 0 ? (
           <p className="rounded-xl border border-line-subtle bg-surface p-6 text-center text-[13px] text-fg-tertiary">
             Nobody is waiting on a compliance decision.
           </p>
         ) : (
           <ul className="divide-y divide-line-subtle overflow-hidden rounded-xl border border-line-subtle bg-surface">
-            {queue.data.map((driver) => (
+            {waiting.map((driver) => (
               <li key={driver.driverId}>
                 <Link
                   to="/kyc/$driverId"
@@ -130,127 +128,83 @@ export function DriversPage() {
       <section className="space-y-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-[15px] font-semibold">Directory</h2>
-
-          <div className="flex items-center gap-2">
-            <input
-              type="search"
-              value={search}
-              onChange={(event) => {
-                setSearch(event.target.value)
-                // A new search invalidates the page we were on: cursor 'page 3 of the
-                // old result' is meaningless against a different predicate.
-                setCursors([])
-              }}
-              placeholder="Name or phone"
-              aria-label="Search drivers by name or phone"
-              className="h-8 rounded-md border border-line bg-surface px-2.5 text-[13px] placeholder:text-fg-tertiary"
-            />
-
-            <select
-              value={status}
-              onChange={(event) => {
-                setStatus(event.target.value)
-                setCursors([])
-              }}
-              aria-label="Filter by status"
-              className="h-8 rounded-md border border-line bg-surface px-2 text-[13px]"
-            >
-              {['all', 'Online', 'Offline', 'Idle', 'OnTrip', 'Paused'].map((option) => (
-                <option key={option} value={option}>
-                  {option === 'all' ? 'Any status' : option}
-                </option>
-              ))}
-            </select>
-          </div>
         </div>
 
-        <div className="overflow-x-auto rounded-xl border border-line-subtle bg-surface">
-          <table className="w-full min-w-[720px] border-collapse text-[13px]">
-            <thead>
-              <tr className="border-b border-line-subtle">
-                {['Driver', 'Phone', 'Status', 'Rating', 'Rides', 'Joined'].map((header) => (
-                  <th
-                    key={header}
-                    scope="col"
-                    className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-fg-tertiary"
-                  >
-                    {header}
-                  </th>
+        <ListToolbar actions={<ExportButton path="/v1/admin/drivers/export.csv" query={{ q: filters.q, status: filters.status }} filename="orbit-drivers.csv" />}>
+          <SearchBox value={search} onChange={setSearch} placeholder="Name or phone" className="w-64" />
+          <FilterSelect<(typeof STATUSES)[number]>
+            label="Filter by status"
+            value={status}
+            onChange={setStatus}
+            options={STATUSES.map((option) => ({ value: option, label: option === 'all' ? 'Any status' : option === 'OnTrip' ? 'On trip' : option }))}
+          />
+        </ListToolbar>
+
+        {directory.query.isError ? (
+          <LoadError error={directory.query.error} what="the driver directory" onRetry={() => { void directory.query.refetch() }} />
+        ) : (
+          <div className="overflow-x-auto rounded-xl border border-line-subtle bg-surface">
+            <table className="w-full min-w-[720px] border-collapse text-[13px]">
+              <thead>
+                <tr className="border-b border-line-subtle">
+                  {['Driver', 'Phone', 'Status', 'Rating', 'Rides', 'Joined'].map((header) => (
+                    <th
+                      key={header}
+                      scope="col"
+                      className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-fg-tertiary"
+                    >
+                      {header}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+
+              <tbody>
+                {directory.query.isPending ? (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-8 text-center text-fg-tertiary">
+                      Loading…
+                    </td>
+                  </tr>
+                ) : null}
+
+                {!directory.query.isPending && directory.items.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-8 text-center text-fg-tertiary">
+                      No driver matches that.
+                    </td>
+                  </tr>
+                ) : null}
+
+                {directory.items.map((driver) => (
+                  <tr key={driver.driverId} className="border-b border-line-subtle last:border-0">
+                    <td className="px-4 py-3">
+                      <p className="font-medium">{driver.displayName}</p>
+                      <p className="tabular text-[11px] text-fg-tertiary">{driver.driverId}</p>
+                    </td>
+                    <td className="tabular px-4 py-3 text-fg-secondary">{driver.phoneMasked}</td>
+                    <td className="px-4 py-3 text-fg-secondary">{driver.status}</td>
+                    <td className="tabular px-4 py-3">{driver.rating.toFixed(2)}</td>
+                    <td className="tabular px-4 py-3">
+                      {driver.completedRides.toLocaleString('en-NG')}
+                    </td>
+                    <td className="px-4 py-3 text-fg-secondary">
+                      {new Date(driver.joinedAt).toLocaleDateString('en-NG')}
+                    </td>
+                  </tr>
                 ))}
-              </tr>
-            </thead>
+              </tbody>
+            </table>
+          </div>
+        )}
 
-            <tbody>
-              {directory.isPending ? (
-                <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-fg-tertiary">
-                    Loading…
-                  </td>
-                </tr>
-              ) : null}
-
-              {directory.data?.items.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-fg-tertiary">
-                    No driver matches that.
-                  </td>
-                </tr>
-              ) : null}
-
-              {directory.data?.items.map((driver) => (
-                <tr key={driver.driverId} className="border-b border-line-subtle last:border-0">
-                  <td className="px-4 py-3">
-                    <p className="font-medium">{driver.displayName}</p>
-                    <p className="tabular text-[11px] text-fg-tertiary">{driver.driverId}</p>
-                  </td>
-                  <td className="tabular px-4 py-3 text-fg-secondary">{driver.phoneMasked}</td>
-                  <td className="px-4 py-3 text-fg-secondary">{driver.status}</td>
-                  <td className="tabular px-4 py-3">{driver.rating.toFixed(2)}</td>
-                  <td className="tabular px-4 py-3">
-                    {driver.completedRides.toLocaleString('en-NG')}
-                  </td>
-                  <td className="px-4 py-3 text-fg-secondary">
-                    {new Date(driver.joinedAt).toLocaleDateString('en-NG')}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="flex items-center justify-end gap-2">
-          <button
-            type="button"
-            disabled={cursors.length === 0}
-            onClick={() => {
-              setCursors((stack) => stack.slice(0, -1))
-            }}
-            className="h-8 rounded-md border border-line px-3 text-[12px] font-medium text-fg-secondary transition-colors hover:bg-hover hover:text-fg disabled:opacity-40"
-          >
-            Previous
-          </button>
-
-          <button
-            type="button"
-            disabled={directory.data?.nextCursor == null}
-            onClick={() => {
-              const next = directory.data?.nextCursor
-
-              if (next != null) {
-                setCursors((stack) => [...stack, next])
-              }
-            }}
-            className="h-8 rounded-md border border-line px-3 text-[12px] font-medium text-fg-secondary transition-colors hover:bg-hover hover:text-fg disabled:opacity-40"
-          >
-            Next
-          </button>
-        </div>
+        <Pagination list={directory} />
 
         {/* Said plainly, because a masked column invites somebody to go looking for the
             unmasking toggle. There is not one here on purpose. */}
         <p className="text-[11px] text-fg-tertiary">
-          Phone numbers are masked in the directory. Full contact details are read one
-          driver at a time, and each read is recorded.
+          Phone numbers are masked in the directory and in the export. Full contact details
+          are read one driver at a time, and each read is recorded.
         </p>
       </section>
     </div>

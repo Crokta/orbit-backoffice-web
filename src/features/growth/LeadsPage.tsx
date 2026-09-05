@@ -1,9 +1,11 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { api } from '../../lib/api/client'
 import { cn } from '../../components/ui/cn'
 import { LoadError } from '../../components/ui/LoadError'
+import { useDebounced } from '../../lib/paging'
+import { ExportButton, FilterSelect, ListToolbar, SearchBox } from '../shared/ListControls'
 
 interface Lead {
   readonly id: string
@@ -58,20 +60,42 @@ const PAGE_SIZE = 50
 export function LeadsPage() {
   const queryClient = useQueryClient()
   const [status, setStatus] = useState<LeadStatus | 'All'>('All')
+  const [source, setSource] = useState<'All' | 'GuideDownload' | 'ContactForm'>('All')
+  const [onlyUndelivered, setOnlyUndelivered] = useState(false)
+  const [search, setSearch] = useState('')
   const [offset, setOffset] = useState(0)
   const [expanded, setExpanded] = useState<string | null>(null)
 
+  const q = useDebounced(search.trim())
+
+  const filters = useMemo(
+    () => ({
+      status: status === 'All' ? undefined : status,
+      source: source === 'All' ? undefined : source,
+      q: q.length === 0 ? undefined : q,
+      undelivered: onlyUndelivered ? true : undefined,
+    }),
+    [status, source, q, onlyUndelivered],
+  )
+
+  // Filters changing resets to the first page: offset 100 of a different predicate is
+  // not a page anybody asked for.
+  const filterKey = JSON.stringify(filters)
+  const lastFilterKey = useRef(filterKey)
+
+  useEffect(() => {
+    if (lastFilterKey.current !== filterKey) {
+      lastFilterKey.current = filterKey
+      setOffset(0)
+    }
+  }, [filterKey])
+
+  // Offset-paged, unlike the rest of the console: leads arrive a few a day and the header
+  // shows a total, which a keyset page cannot cheaply give.
   const leads = useQuery({
-    queryKey: ['leads', status, offset],
-    queryFn: () => {
-      const params = new URLSearchParams({ limit: String(PAGE_SIZE), offset: String(offset) })
-
-      if (status !== 'All') {
-        params.set('status', status)
-      }
-
-      return api.get<LeadPage>(`/v1/admin/leads?${params.toString()}`)
-    },
+    queryKey: ['leads', filterKey, offset],
+    queryFn: () => api.get<LeadPage>('/v1/admin/leads', { query: { ...filters, limit: PAGE_SIZE, offset } }),
+    placeholderData: keepPreviousData,
   })
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['leads'] })
@@ -109,6 +133,24 @@ export function LeadsPage() {
         ) : null}
       </header>
 
+      <ListToolbar actions={<ExportButton path="/v1/admin/leads/export.csv" query={{ ...filters }} filename="orbit-leads.csv" />}>
+        <SearchBox value={search} onChange={setSearch} placeholder="Name, email, organisation or volume" />
+        <FilterSelect
+          label="Source"
+          value={source}
+          onChange={setSource}
+          options={[
+            { value: 'All', label: 'Any source' },
+            { value: 'GuideDownload', label: 'Guide download' },
+            { value: 'ContactForm', label: 'Contact form' },
+          ]}
+        />
+        <label className="flex items-center gap-2 text-[13px] text-fg-secondary">
+          <input type="checkbox" checked={onlyUndelivered} onChange={(event) => { setOnlyUndelivered(event.target.checked); }} />
+          Guide not delivered
+        </label>
+      </ListToolbar>
+
       <div className="flex flex-wrap gap-1.5">
         {(['All', ...STATUSES] as const).map((value) => (
           <button
@@ -116,7 +158,6 @@ export function LeadsPage() {
             type="button"
             onClick={() => {
               setStatus(value)
-              setOffset(0)
             }}
             className={cn(
               'h-8 rounded-md border px-3 text-[13px] transition-colors',
@@ -140,7 +181,9 @@ export function LeadsPage() {
 
       {page?.items.length === 0 ? (
         <p className="rounded-lg border border-line-subtle bg-surface p-8 text-center text-[13px] text-fg-tertiary">
-          {status === 'All' ? 'No enquiries yet.' : `Nothing is marked ${status.toLowerCase()}.`}
+          {q.length > 0 || source !== 'All' || onlyUndelivered
+            ? 'No lead matches that.'
+            : status === 'All' ? 'No enquiries yet.' : `Nothing is marked ${status.toLowerCase()}.`}
         </p>
       ) : null}
 

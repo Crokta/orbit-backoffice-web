@@ -1,10 +1,12 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMemo, useState } from 'react'
 
 import { Button } from '../../components/ui/Button'
 import { api, newIdempotencyKey } from '../../lib/api/client'
 import { ApiError } from '../../lib/api/problem'
+import { usePagedList, useDebounced, type Page } from '../../lib/paging'
 import { queryKeys } from '../../lib/query/client'
+import { ExportButton, FilterSelect, ListToolbar, Pagination, SearchBox } from '../shared/ListControls'
 import { LoadError } from '../../components/ui/LoadError'
 
 interface Zone {
@@ -33,9 +35,19 @@ export function SurgeControlsPage() {
   const [pending, setPending] = useState<{ zone: Zone; engage: boolean } | null>(null)
   const [reason, setReason] = useState('')
 
-  const zones = useQuery({
-    queryKey: queryKeys.zones.all,
-    queryFn: () => api.get<readonly Zone[]>('/v1/admin/zones'),
+  const [search, setSearch] = useState('')
+  const [operating, setOperating] = useState<'all' | 'operating' | 'not'>('all')
+  const q = useDebounced(search.trim())
+  const filters = useMemo(
+    () => ({ q: q.length === 0 ? undefined : q, operating: operating === 'all' ? undefined : operating === 'operating' }),
+    [q, operating],
+  )
+
+  const zones = usePagedList<Zone, typeof filters>({
+    key: queryKeys.zones.all,
+    filters,
+    fetchPage: (params) => api.get<Page<Zone>>('/v1/admin/zones', { query: { ...params } }),
+    initialLimit: 25,
     refetchInterval: 15_000,
   })
 
@@ -61,12 +73,34 @@ export function SurgeControlsPage() {
         and takes effect on the next quote, not retroactively — fares already quoted stand.
       </p>
 
-      {zones.isError ? (
-        <LoadError error={zones.error} what="zones" onRetry={() => { void zones.refetch() }} />
+      <ListToolbar actions={<ExportButton path="/v1/admin/zones/export.csv" query={filters} filename="orbit-zones.csv" />}>
+        <SearchBox value={search} onChange={setSearch} placeholder="Zone name, id or market" />
+        <FilterSelect
+          label="Operating"
+          value={operating}
+          onChange={setOperating}
+          options={[
+            { value: 'all', label: 'All zones' },
+            { value: 'operating', label: 'Operating' },
+            { value: 'not', label: 'Not operating' },
+          ]}
+        />
+      </ListToolbar>
+
+      {zones.query.isError ? (
+        <LoadError error={zones.query.error} what="zones" onRetry={() => { void zones.query.refetch() }} />
+      ) : null}
+
+      {zones.query.isPending ? <p className="text-[13px] text-fg-secondary">Loading zones…</p> : null}
+
+      {!zones.query.isPending && !zones.query.isError && zones.items.length === 0 ? (
+        <p className="rounded-lg border border-line-subtle bg-surface p-8 text-center text-[13px] text-fg-tertiary">
+          No zone matches that.
+        </p>
       ) : null}
 
       <div className="space-y-3">
-        {zones.data?.map((zone) => (
+        {zones.items.map((zone) => (
           <article key={zone.zoneId} className="rounded-lg border border-line-subtle bg-surface p-4">
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -164,6 +198,8 @@ export function SurgeControlsPage() {
             : 'The request could not be raised.'}
         </p>
       ) : null}
+
+      <Pagination list={zones} />
     </div>
   )
 }

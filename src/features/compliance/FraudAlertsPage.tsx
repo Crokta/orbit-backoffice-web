@@ -1,20 +1,25 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMemo, useState } from 'react'
 
 import { Button } from '../../components/ui/Button'
 import { api, newIdempotencyKey } from '../../lib/api/client'
+import { useDebounced, usePagedList, type Page } from '../../lib/paging'
 import { queryKeys } from '../../lib/query/client'
+import { ExportButton, FilterSelect, ListToolbar, Pagination, SearchBox } from '../shared/ListControls'
 import { LoadError } from '../../components/ui/LoadError'
 
 interface FraudCase {
   readonly caseId: string
   readonly subjectId: string
   readonly subjectType: string
+  readonly status: string
   readonly appliedAction: string
   readonly riskScore: number
   readonly summary: string
   readonly features: readonly Feature[]
   readonly openedAt: string
+  readonly resolvedAt: string | null
+  readonly resolutionNote: string | null
 }
 
 interface Feature {
@@ -33,10 +38,29 @@ interface Feature {
 export function FraudAlertsPage() {
   const queryClient = useQueryClient()
   const [note, setNote] = useState<Record<string, string>>({})
+  const [search, setSearch] = useState('')
+  const [status, setStatus] = useState<'open' | 'resolved' | 'all'>('open')
+  const [action, setAction] = useState<'any' | 'Flag' | 'Challenge' | 'Block' | 'Suspend'>('any')
+  const [subject, setSubject] = useState<'any' | 'Rider' | 'Driver' | 'Device'>('any')
 
-  const cases = useQuery({
-    queryKey: queryKeys.fraud.queue(),
-    queryFn: () => api.get<readonly FraudCase[]>('/v1/fraud/cases'),
+  const q = useDebounced(search.trim())
+  const filters = useMemo(
+    () => ({
+      q: q.length === 0 ? undefined : q,
+      status,
+      action: action === 'any' ? undefined : action,
+      subjectType: subject === 'any' ? undefined : subject,
+    }),
+    [q, status, action, subject],
+  )
+
+  // Straight to the fraud service, as before: the console reaches it through the gateway
+  // and there is no BFF surface for cases.
+  const cases = usePagedList<FraudCase, typeof filters>({
+    key: queryKeys.fraud.all,
+    filters,
+    fetchPage: (params) => api.get<Page<FraudCase>>('/v1/fraud/cases', { query: { ...params } }),
+    initialLimit: 25,
   })
 
   const resolve = useMutation({
@@ -50,25 +74,78 @@ export function FraudAlertsPage() {
     },
   })
 
-  if (cases.isPending) {
-    return <p className="text-[13px] text-fg-secondary">Loading cases…</p>
+  const toolbar = (
+    <ListToolbar actions={<ExportButton path="/v1/fraud/cases/export.csv" query={filters} filename="orbit-fraud-cases.csv" />}>
+      <SearchBox value={search} onChange={setSearch} placeholder="Case, subject, ride or reason" />
+      <FilterSelect
+        label="Status"
+        value={status}
+        onChange={setStatus}
+        options={[
+          { value: 'open', label: 'Open' },
+          { value: 'resolved', label: 'Resolved' },
+          { value: 'all', label: 'All cases' },
+        ]}
+      />
+      <FilterSelect
+        label="Applied action"
+        value={action}
+        onChange={setAction}
+        options={[
+          { value: 'any', label: 'Any action' },
+          { value: 'Flag', label: 'Flag' },
+          { value: 'Challenge', label: 'Challenge' },
+          { value: 'Block', label: 'Block' },
+          { value: 'Suspend', label: 'Suspend' },
+        ]}
+      />
+      <FilterSelect
+        label="Subject"
+        value={subject}
+        onChange={setSubject}
+        options={[
+          { value: 'any', label: 'Any subject' },
+          { value: 'Rider', label: 'Riders' },
+          { value: 'Driver', label: 'Drivers' },
+          { value: 'Device', label: 'Devices' },
+        ]}
+      />
+    </ListToolbar>
+  )
+
+  if (cases.query.isPending) {
+    return (
+      <div className="max-w-4xl space-y-4">
+        <h1 className="text-[28px] font-semibold leading-[34px]">Fraud alerts</h1>
+        {toolbar}
+        <p className="text-[13px] text-fg-secondary">Loading cases…</p>
+      </div>
+    )
   }
 
-  if (cases.isError) {
-    return <LoadError error={cases.error} what="fraud alerts" onRetry={() => { void cases.refetch() }} />
+  if (cases.query.isError) {
+    return (
+      <div className="max-w-4xl space-y-4">
+        <h1 className="text-[28px] font-semibold leading-[34px]">Fraud alerts</h1>
+        {toolbar}
+        <LoadError error={cases.query.error} what="fraud alerts" onRetry={() => { void cases.query.refetch() }} />
+      </div>
+    )
   }
 
   return (
     <div className="max-w-4xl space-y-4">
       <h1 className="text-[28px] font-semibold leading-[34px]">Fraud alerts</h1>
 
-      {cases.data.length === 0 ? (
+      {toolbar}
+
+      {cases.items.length === 0 ? (
         <p className="rounded-lg border border-line-subtle bg-surface p-8 text-center text-[13px] text-fg-tertiary">
-          Nothing is open.
+          {q.length > 0 || action !== 'any' || subject !== 'any' ? 'No case matches that.' : status === 'open' ? 'Nothing is open.' : 'No cases.'}
         </p>
       ) : null}
 
-      {cases.data.map((item) => (
+      {cases.items.map((item) => (
         <article key={item.caseId} className="rounded-lg border border-line-subtle bg-surface p-4">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
@@ -109,6 +186,13 @@ export function FraudAlertsPage() {
             ))}
           </ul>
 
+          {item.resolvedAt !== null ? (
+            <p className="mt-3 text-[12px] text-fg-tertiary">
+              {item.status} {new Date(item.resolvedAt).toLocaleString('en-NG')}
+              {item.resolutionNote !== null && item.resolutionNote.length > 0 ? ` · ${item.resolutionNote}` : ''}
+            </p>
+          ) : (
+          <>
           <textarea
             rows={2}
             value={note[item.caseId] ?? ''}
@@ -144,8 +228,12 @@ export function FraudAlertsPage() {
               Uphold
             </Button>
           </div>
+          </>
+          )}
         </article>
       ))}
+
+      <Pagination list={cases} />
     </div>
   )
 }
