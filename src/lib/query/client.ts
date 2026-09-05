@@ -85,4 +85,5 @@ export const queryKeys = {
   },
   ledger: { all: ['ledger'] as const },
   zones: { all: ['zones'] as const },
+  commissions: { all: ['commissions'] as const },
 } as const

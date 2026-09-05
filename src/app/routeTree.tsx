@@ -12,6 +12,7 @@ import { LedgerPage } from '../features/finance/LedgerPage'
 import { LiveOpsPage } from '../features/liveops/LiveOpsPage'
 import { RideDetailPage } from '../features/liveops/RideDetailPage'
 import { RidesPage } from '../features/liveops/RidesPage'
+import { CommissionsPage } from '../features/finance/CommissionsPage'
 import { RefundsQueuePage } from '../features/finance/RefundsQueuePage'
 import { SignInPage } from '../features/auth/SignInPage'
 import { SurgeControlsPage } from '../features/controls/SurgeControlsPage'
@@ -70,6 +71,7 @@ const flatRoutes = [
   { path: '/fraud', component: FraudAlertsPage },
   { path: '/ledger', component: LedgerPage },
   { path: '/refunds', component: RefundsQueuePage },
+  { path: '/commissions', component: CommissionsPage },
   { path: '/surge', component: SurgeControlsPage },
   { path: '/audit', component: AuditLogPage },
   { path: '/leads', component: LeadsPage },

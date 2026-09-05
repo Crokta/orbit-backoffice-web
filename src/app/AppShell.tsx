@@ -39,6 +39,7 @@ const SECTIONS = [
       // "Approvals" — a nav label that disagrees with its own page costs a beat of doubt
       // every time, and doubt is expensive on the screens that move money.
       { to: '/refunds', label: 'Approvals', icon: <CheckIcon /> },
+      { to: '/commissions', label: 'Commissions', icon: <SplitIcon /> },
     ],
   },
   {
@@ -265,6 +266,16 @@ function BookIcon() {
     <Icon>
       <path d="M2.5 3.2A1.2 1.2 0 0 1 3.7 2H13v10.5H3.7a1.2 1.2 0 0 0-1.2 1.2z" />
       <path d="M2.5 12.3A1.2 1.2 0 0 1 3.7 11H13" />
+    </Icon>
+  )
+}
+
+/** A fare splitting two ways — what a commission is. */
+function SplitIcon() {
+  return (
+    <Icon>
+      <path d="M2 8h3.5L8 4.5 10.5 11.5 13 8h1" />
+      <circle cx="8" cy="8" r="6.5" />
     </Icon>
   )
 }

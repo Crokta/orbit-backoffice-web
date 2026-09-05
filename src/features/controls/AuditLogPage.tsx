@@ -13,6 +13,7 @@ interface AuditEntry {
   readonly reason: string
   readonly succeeded: boolean
   readonly failureReason: string | null
+  readonly outcome: string | null
   readonly approvalId: string | null
   readonly occurredAt: string
 }
@@ -102,6 +103,15 @@ export function AuditLogPage() {
             {entry.approvalId !== null ? (
               <p className="tabular mt-1 text-[11px] text-fg-tertiary">
                 Approved under {entry.approvalId}
+              </p>
+            ) : null}
+
+            {/* What it actually did, not just that it happened. "Changed a commission" and
+                "changed it to default-comfort-20260905052315" answer different questions,
+                and only the second one survives being asked six months later. */}
+            {entry.succeeded && entry.outcome !== null ? (
+              <p className="tabular mt-1 text-[11px] text-fg-tertiary">
+                Result: {entry.outcome}
               </p>
             ) : null}
 
