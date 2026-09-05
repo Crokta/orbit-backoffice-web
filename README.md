@@ -122,6 +122,22 @@ Then http://localhost:5174.
 Multistage; nginx as UID 64198, no build toolchain in the runtime image. See
 `orbit-enterprise-web` for the details — the two are deliberately identical here.
 
+## Static hosting
+
+`netlify.toml` builds and then runs `scripts/netlify-redirects.mjs`, which writes
+`dist/_redirects` from `VITE_API_BASE_URL`. Two things a static host does not do for itself:
+
+- **The SPA fallback.** The router owns `/trips` and the rest; without `/* /index.html 200`
+  a reload or a shared link is the host's own 404.
+- **The `/api` proxy**, but only when `VITE_API_BASE_URL` is a relative path — then it is
+  proxied on to `VITE_GATEWAY_URL`, the same arrangement vite and nginx provide. Set
+  `VITE_API_BASE_URL` to the gateway's URL instead and the browser calls it directly, in
+  which case the gateway needs the site's origin in `CORS__ALLOWEDORIGINS__n` or every
+  request fails preflight.
+
+Both variables are read at **build** time. A value added to a host's dashboard after a
+deploy does nothing until the next one.
+
 ## Tests
 
 23, shared with the enterprise app where the code is shared. The interesting ones cover the

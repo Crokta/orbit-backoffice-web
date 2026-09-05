@@ -14,6 +14,19 @@ interface ImportMetaEnv {
 
   /** What the browser calls. Same-origin `/api` in every environment. */
   readonly VITE_API_BASE_URL?: string
+
+  /**
+   * Which platform this build talks to, shown in the sidebar.
+   *
+   * A label, not a switch: nothing branches on it. It exists because every destructive
+   * control in this console behaves identically against staging and production, so the
+   * only thing between a rehearsal and a real force-cancel is the operator knowing
+   * which one is on screen.
+   */
+  readonly VITE_ENVIRONMENT?: string
+
+  /** The market this console is pointed at, shown beside the environment. */
+  readonly VITE_MARKET?: string
 }
 
 interface ImportMeta {

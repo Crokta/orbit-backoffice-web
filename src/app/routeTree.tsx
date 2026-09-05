@@ -13,6 +13,10 @@ import { LiveOpsPage } from '../features/liveops/LiveOpsPage'
 import { RideDetailPage } from '../features/liveops/RideDetailPage'
 import { RidesPage } from '../features/liveops/RidesPage'
 import { CommissionsPage } from '../features/finance/CommissionsPage'
+import { CorporatePage } from '../features/corporate/CorporatePage'
+import { DriversPage } from '../features/fleet/DriversPage'
+import { IncidentsPage } from '../features/incidents/IncidentsPage'
+import { PayoutsPage } from '../features/finance/PayoutsPage'
 import { RefundsQueuePage } from '../features/finance/RefundsQueuePage'
 import { SignInPage } from '../features/auth/SignInPage'
 import { SurgeControlsPage } from '../features/controls/SurgeControlsPage'
@@ -67,14 +71,24 @@ const driverKycRoute = createRoute({
 const flatRoutes = [
   { path: '/', component: LiveOpsPage },
   { path: '/rides', component: RidesPage },
+  { path: '/drivers', component: DriversPage },
+  { path: '/corporate', component: CorporatePage },
   { path: '/compliance', component: ComplianceQueuePage },
   { path: '/fraud', component: FraudAlertsPage },
   { path: '/ledger', component: LedgerPage },
-  { path: '/refunds', component: RefundsQueuePage },
-  { path: '/commissions', component: CommissionsPage },
+  { path: '/payouts', component: PayoutsPage },
+  { path: '/incidents', component: IncidentsPage },
   { path: '/surge', component: SurgeControlsPage },
   { path: '/audit', component: AuditLogPage },
+
+  { path: '/commissions', component: CommissionsPage },
   { path: '/leads', component: LeadsPage },
+
+  // Reachable, but not in the sidebar. Approvals is a queue you are sent to — from the
+  // payout waiting on you, or from a link a colleague pasted — rather than one you go
+  // looking for, and it is the same four-eyes queue Payouts already surfaces. A row of
+  // its own would be a second front door to one decision.
+  { path: '/refunds', component: RefundsQueuePage },
 ] as const
 
 export const routeTree = rootRoute.addChildren([

@@ -35,8 +35,11 @@ export default ts.config(
   },
 
   {
-    // The config files themselves: plain ESM, linted without type information.
-    files: ['*.config.js', '*.config.ts'],
+    // Everything that runs on Node rather than in the browser: the config files and the
+    // build scripts beside them. Plain ESM, linted without type information — they are
+    // not in the tsconfig, and `globals.browser` alone leaves `process` and `console`
+    // undeclared, which is a real error for browser code and noise for a build script.
+    files: ['*.config.js', '*.config.ts', 'scripts/**/*.{js,mjs,cjs,ts}'],
     languageOptions: { globals: globals.node },
     extends: [ts.configs.disableTypeChecked],
   },

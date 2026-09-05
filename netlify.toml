@@ -1,0 +1,11 @@
+# Netlify deployment for the backoffice console.
+#
+# The build command runs the redirect generator after vite, because dist/ has to exist
+# first. It is not part of `pnpm build`: the Docker image serves through nginx and has no
+# VITE_GATEWAY_URL at build time, so a build that fails without one would break that path.
+[build]
+  command = "pnpm build && node scripts/netlify-redirects.mjs"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"

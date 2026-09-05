@@ -1,3 +1,4 @@
+import { API_BASE_URL } from './base-url'
 import { ApiError, toApiError } from './problem'
 import { getAccessToken, refreshAccessToken } from '../auth/session'
 
@@ -9,7 +10,7 @@ import { getAccessToken, refreshAccessToken } from '../auth/session'
  * header sanitisation happen, and a client that can reach a service directly is a
  * client that can skip all three (§5.1).
  */
-const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api'
+const BASE_URL = API_BASE_URL
 
 interface RequestOptions extends Omit<RequestInit, 'body'> {
   /** Serialised as JSON. Pass `FormData` through `raw` instead. */

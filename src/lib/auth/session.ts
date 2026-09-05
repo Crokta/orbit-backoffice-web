@@ -8,6 +8,8 @@
  *
  * The refresh token is an httpOnly cookie the browser sends and no script can read.
  */
+import { API_BASE_URL } from '../api/base-url'
+
 let accessToken: string | null = null
 let expiresAt = 0
 
@@ -65,7 +67,7 @@ export function refreshAccessToken(): Promise<boolean> {
 
 async function performRefresh(): Promise<boolean> {
   try {
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL ?? '/api'}/v1/auth/refresh`, {
+    const response = await fetch(`${API_BASE_URL}/v1/auth/refresh`, {
       method: 'POST',
       credentials: 'include',
       headers: { Accept: 'application/json' },
