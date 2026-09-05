@@ -6,10 +6,12 @@ import { Button } from '../../components/ui/Button'
 import { cn } from '../../components/ui/cn'
 import { api } from '../../lib/api/client'
 import { ApiError } from '../../lib/api/problem'
-import { setSession } from '../../lib/auth/session'
+import { deviceFingerprint, setSession } from '../../lib/auth/session'
 
 interface TokenPair {
   readonly accessToken: string
+  readonly refreshToken: string
+  readonly familyId: string
   readonly expiresInSeconds: number
   readonly mustChangePassword?: boolean
 }
@@ -37,7 +39,9 @@ export function SignInPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
 
   function land(result: TokenPair) {
-    setSession(result.accessToken, result.expiresInSeconds)
+    // The refresh grant goes with the token. Without it every reload landed back here:
+    // identity issues no cookie, and a refresh with nothing to trade in is refused.
+    setSession(result.accessToken, result.expiresInSeconds, { refreshToken: result.refreshToken, familyId: result.familyId })
 
     // A seeded or reset password gets one destination: the change screen. Letting an
     // operator postpone it is how an initial password becomes a permanent one.
@@ -51,7 +55,8 @@ export function SignInPage() {
 
   const signIn = useMutation({
     mutationFn: (): Promise<TokenPair> =>
-      api.post<TokenPair>('/v1/auth/password', { json: { email, password } }),
+      // The fingerprint binds the refresh token to this browser; refresh without it is refused.
+      api.post<TokenPair>('/v1/auth/password', { json: { email, password, deviceFingerprint: deviceFingerprint() } }),
     onSuccess: land,
   })
 

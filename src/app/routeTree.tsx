@@ -14,7 +14,9 @@ import { LiveOpsPage } from '../features/liveops/LiveOpsPage'
 import { RideDetailPage } from '../features/liveops/RideDetailPage'
 import { RidesPage } from '../features/liveops/RidesPage'
 import { CommissionsPage } from '../features/finance/CommissionsPage'
+import { CorporateAccountPage } from '../features/corporate/CorporateAccountPage'
 import { CorporatePage } from '../features/corporate/CorporatePage'
+import { OnboardingPipelinePage } from '../features/corporate/OnboardingPipelinePage'
 import { DriversPage } from '../features/fleet/DriversPage'
 import { IncidentsPage } from '../features/incidents/IncidentsPage'
 import { PayoutsPage } from '../features/finance/PayoutsPage'
@@ -75,6 +77,20 @@ const driverKycRoute = createRoute({
   component: DriverKycPage,
 })
 
+// The pipeline is registered before the account detail so `/corporate/pipeline` matches
+// the literal segment rather than being read as a company id.
+const corporatePipelineRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: '/corporate/pipeline',
+  component: OnboardingPipelinePage,
+})
+
+const corporateAccountRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: '/corporate/$companyId',
+  component: CorporateAccountPage,
+})
+
 const flatRoutes = [
   { path: '/', component: LiveOpsPage },
   { path: '/rides', component: RidesPage },
@@ -104,6 +120,8 @@ export const routeTree = rootRoute.addChildren([
     rideDetailRoute,
     ledgerAccountRoute,
     driverKycRoute,
+    corporatePipelineRoute,
+    corporateAccountRoute,
     ...flatRoutes.map((route) =>
       createRoute({ getParentRoute: () => authenticatedRoute, path: route.path, component: route.component }),
     ),

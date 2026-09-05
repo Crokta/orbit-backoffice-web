@@ -6,6 +6,10 @@ describe('session', () => {
   beforeEach(() => {
     clearSession()
     vi.restoreAllMocks()
+
+    // A refresh needs something to trade in. Identity issues no cookie; the grant lives
+    // in sessionStorage and goes up in the body.
+    sessionStorage.setItem('orbit-refresh', JSON.stringify({ refreshToken: 'rt_1', familyId: 'fam_1' }))
   })
 
   afterEach(() => {
@@ -38,7 +42,7 @@ describe('session', () => {
 
   it('collapses concurrent refreshes into one request', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ accessToken: 'tok_new', expiresIn: 900 }), { status: 200 }),
+      new Response(JSON.stringify({ accessToken: 'tok_new', refreshToken: 'rt_2', familyId: 'fam_1', expiresInSeconds: 900 }), { status: 200 }),
     )
     vi.stubGlobal('fetch', fetchMock)
 

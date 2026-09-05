@@ -1,14 +1,26 @@
-/**
- * Where the access token lives.
- *
- * In memory, in a module-scoped variable — never in `localStorage`. A token in local
- * storage is readable by any script that ends up on the page, which includes anything
- * a supply-chain compromise in a dependency puts there. Losing the token on a page
- * reload is a real cost, and the refresh cookie is what pays it.
- *
- * The refresh token is an httpOnly cookie the browser sends and no script can read.
- */
 import { API_BASE_URL } from '../api/base-url'
+
+/**
+ * Where the session lives.
+ *
+ * The access token is a module-scoped variable — never in `localStorage`. A token in
+ * local storage is readable by any script that ends up on the page, which includes
+ * anything a supply-chain compromise in a dependency puts there.
+ *
+ * The refresh token and its family id are kept in `sessionStorage`: per tab, gone when
+ * the tab closes, and the reason a reload does not land on the sign-in page. Identity
+ * issues them in the response body and rotates them on every refresh; there is no
+ * httpOnly cookie on this platform, because the same endpoint serves the mobile apps.
+ * The refresh token is useless without the device fingerprint below, which is what
+ * makes holding it in the tab acceptable.
+ */
+interface RefreshGrant {
+  readonly refreshToken: string
+  readonly familyId: string
+}
+
+const REFRESH_KEY = 'orbit-refresh'
+const DEVICE_KEY = 'orbit-device'
 
 let accessToken: string | null = null
 let expiresAt = 0
@@ -22,12 +34,46 @@ export function getAccessToken(): string | null {
   return accessToken
 }
 
-export function setSession(token: string, expiresInSeconds: number): void {
+/**
+ * Identifies this browser to identity.
+ *
+ * A refresh token is bound to the device it was issued to; presenting it from another
+ * fingerprint is treated as theft and revokes the family. A random id kept in local
+ * storage is the closest thing a browser has to a device — stable across reloads,
+ * different per browser profile.
+ */
+export function deviceFingerprint(): string {
+  try {
+    const existing = localStorage.getItem(DEVICE_KEY)
+
+    if (existing !== null && existing.length > 0) {
+      return existing
+    }
+
+    const created = `web-${crypto.randomUUID()}`
+    localStorage.setItem(DEVICE_KEY, created)
+    return created
+  } catch {
+    // Storage disabled: a per-load fingerprint means refresh will not work across a
+    // reload, which is the honest outcome for a browser that cannot remember anything.
+    return `web-${crypto.randomUUID()}`
+  }
+}
+
+export function setSession(token: string, expiresInSeconds: number, refresh?: RefreshGrant): void {
   accessToken = token
 
   // A 30-second margin, so a token does not expire in flight between the check and the
   // server reading it. Clocks drift and networks are slow.
   expiresAt = Date.now() + (expiresInSeconds - 30) * 1000
+
+  if (refresh !== undefined) {
+    try {
+      sessionStorage.setItem(REFRESH_KEY, JSON.stringify(refresh))
+    } catch {
+      // Private mode or storage disabled. The session lasts until the token expires.
+    }
+  }
 
   for (const listener of listeners) listener(true)
 }
@@ -35,6 +81,12 @@ export function setSession(token: string, expiresInSeconds: number): void {
 export function clearSession(): void {
   accessToken = null
   expiresAt = 0
+
+  try {
+    sessionStorage.removeItem(REFRESH_KEY)
+  } catch {
+    // Nothing stored.
+  }
 
   for (const listener of listeners) listener(false)
 }
@@ -49,8 +101,26 @@ export function onSessionChange(listener: (signedIn: boolean) => void): () => vo
   return () => listeners.delete(listener)
 }
 
+function readRefreshGrant(): RefreshGrant | null {
+  try {
+    const raw = sessionStorage.getItem(REFRESH_KEY)
+
+    if (raw === null) {
+      return null
+    }
+
+    const parsed = JSON.parse(raw) as Partial<RefreshGrant>
+
+    return typeof parsed.refreshToken === 'string' && typeof parsed.familyId === 'string'
+      ? { refreshToken: parsed.refreshToken, familyId: parsed.familyId }
+      : null
+  } catch {
+    return null
+  }
+}
+
 /**
- * Exchanges the refresh cookie for a new access token.
+ * Exchanges the refresh token for a new pair.
  *
  * Concurrent callers share one request. Ten queries failing with 401 at the same moment
  * is the normal case after a token expires, and ten refreshes would rotate the token
@@ -65,12 +135,28 @@ export function refreshAccessToken(): Promise<boolean> {
   return refreshInFlight
 }
 
+interface TokenPair {
+  readonly accessToken: string
+  readonly refreshToken: string
+  readonly familyId: string
+  readonly expiresInSeconds: number
+}
+
 async function performRefresh(): Promise<boolean> {
+  const grant = readRefreshGrant()
+
+  if (grant === null) {
+    // Nothing to trade in: a fresh tab, or a session already cleared. Not a failure
+    // worth a network round trip.
+    clearSession()
+    return false
+  }
+
   try {
     const response = await fetch(`${API_BASE_URL}/v1/auth/refresh`, {
       method: 'POST',
-      credentials: 'include',
-      headers: { Accept: 'application/json' },
+      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ familyId: grant.familyId, refreshToken: grant.refreshToken, deviceFingerprint: deviceFingerprint() }),
     })
 
     if (!response.ok) {
@@ -78,8 +164,8 @@ async function performRefresh(): Promise<boolean> {
       return false
     }
 
-    const body = (await response.json()) as { accessToken: string; expiresIn: number }
-    setSession(body.accessToken, body.expiresIn)
+    const body = (await response.json()) as TokenPair
+    setSession(body.accessToken, body.expiresInSeconds, { refreshToken: body.refreshToken, familyId: body.familyId })
 
     return true
   } catch {

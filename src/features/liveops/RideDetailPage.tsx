@@ -4,6 +4,7 @@ import { useState } from 'react'
 
 import { Button } from '../../components/ui/Button'
 import { Money } from '../../components/ui/Money'
+import { ForceCompleteDialog } from './ForceCompleteDialog'
 import { api, newIdempotencyKey } from '../../lib/api/client'
 import { ApiError } from '../../lib/api/problem'
 import { queryKeys } from '../../lib/query/client'
@@ -185,6 +186,33 @@ export function RideDetailPage() {
           void queryClient.invalidateQueries({ queryKey: queryKeys.rides.audit(rideId) })
         }}
       />
+
+
+      {/* The other override. Cancel voids a ride that did not happen; complete charges one that did. */}
+
+      <div className="flex justify-end">
+
+        <ForceCompleteDialog
+
+          rideId={rideId}
+
+          state={data.ride?.state ?? ''}
+
+          fareMinor={data.ride?.quotedFareMinor ?? 0}
+
+          currency={data.ride?.currency ?? 'NGN'}
+
+          riderName={data.rider?.displayName ?? null}
+
+          driverName={data.driver?.displayName ?? null}
+
+          paymentMethod={data.payment?.status ?? null}
+
+          onDone={() => { void queryClient.invalidateQueries({ queryKey: queryKeys.rides.all }) }}
+
+        />
+
+      </div>
 
       <Panel title="What has been done to this ride">
         {audit.data?.items.length === 0 ? (
