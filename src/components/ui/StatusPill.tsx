@@ -43,7 +43,23 @@ const LABELS: Record<Status, string> = {
   completed: 'Completed',
 }
 
-export function StatusPill({ status, className }: { readonly status: Status; readonly className?: string }) {
+/**
+ * `label` replaces the default wording while keeping the colour ramp.
+ *
+ * The ramp is shared — a delivery in transit is as "in trip" as a ride is — but the words
+ * are not: a parcel is collected, not matched, and a pill that says "In trip" against a
+ * delivery is describing a different product. A feature passes its own label and maps its
+ * own states onto the ramp.
+ */
+export function StatusPill({
+  status,
+  label,
+  className,
+}: {
+  readonly status: Status
+  readonly label?: string | undefined
+  readonly className?: string | undefined
+}) {
   return (
     <span
       className={cn(
@@ -53,7 +69,7 @@ export function StatusPill({ status, className }: { readonly status: Status; rea
       )}
     >
       <span className="size-1.5 rounded-full bg-current" aria-hidden="true" />
-      {LABELS[status]}
+      {label ?? LABELS[status]}
     </span>
   )
 }

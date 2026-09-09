@@ -91,11 +91,20 @@ export function DateRange({
  * the moment a row is inserted is a number nobody should trust. What it does say is where
  * you are and whether there is more.
  */
-export function Pagination<T>({ list, className }: { readonly list: PagedList<T>; readonly className?: string }) {
+export function Pagination<T>({
+  list,
+  className,
+  firstPageLabel = 'Newest first',
+}: {
+  readonly list: PagedList<T>
+  readonly className?: string
+  /** What the first page says about its order. A queue worked oldest-first must not claim "newest first". */
+  readonly firstPageLabel?: string
+}) {
   return (
     <div className={cn('flex flex-wrap items-center justify-between gap-3 text-[12px] text-fg-tertiary', className)}>
       <div className="flex items-center gap-2">
-        <span>{list.pageNumber === 1 ? 'Newest first' : `Page ${String(list.pageNumber)}`}</span>
+        <span>{list.pageNumber === 1 ? firstPageLabel : `Page ${String(list.pageNumber)}`}</span>
         <span aria-hidden="true">·</span>
         <label className="flex items-center gap-2">
           <span>Rows</span>

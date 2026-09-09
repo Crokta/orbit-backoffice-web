@@ -31,7 +31,9 @@ import { clearSession, getAccessToken } from '../lib/auth/session'
 const NAV_ITEMS = [
   { to: '/', label: 'Live ops', icon: <NavigateIcon /> },
   { to: '/rides', label: 'Rides', icon: <CarIcon /> },
+  { to: '/deliveries', label: 'Deliveries', icon: <ParcelIcon /> },
   { to: '/drivers', label: 'Drivers', icon: <PeopleIcon /> },
+  { to: '/fleet', label: 'Fleet', icon: <TruckIcon /> },
   { to: '/corporate', label: 'Corporate', icon: <BriefcaseIcon /> },
   { to: '/leads', label: 'Leads', icon: <SparkIcon /> },
   { to: '/compliance', label: 'Compliance', icon: <ShieldIcon />, count: 'complianceQueue' },
@@ -283,6 +285,29 @@ function CarIcon() {
       <path d="M2 10.5h12V12H2z" />
       <circle cx="4.5" cy="10.5" r="1" />
       <circle cx="11.5" cy="10.5" r="1" />
+    </Icon>
+  )
+}
+
+/** A parcel: a box with its tape seam and the lid's fold. */
+function ParcelIcon() {
+  return (
+    <Icon>
+      <path d="M8 1.8 14 4.8v6.4L8 14.2 2 11.2V4.8z" />
+      <path d="M2 4.8 8 7.8l6-3M8 7.8v6.4" />
+      <path d="M5 3.3l6 3" />
+    </Icon>
+  )
+}
+
+/** A van seen side-on: the cab, the load box and two wheels. */
+function TruckIcon() {
+  return (
+    <Icon>
+      <path d="M1.8 4.2h7.6v6.6H1.8z" />
+      <path d="M9.4 6.2h2.6l2.2 2.4v2.2H9.4" />
+      <circle cx="4.6" cy="11.6" r="1.3" />
+      <circle cx="11.6" cy="11.6" r="1.3" />
     </Icon>
   )
 }

@@ -17,7 +17,14 @@ import { CommissionsPage } from '../features/finance/CommissionsPage'
 import { CorporateAccountPage } from '../features/corporate/CorporateAccountPage'
 import { CorporatePage } from '../features/corporate/CorporatePage'
 import { OnboardingPipelinePage } from '../features/corporate/OnboardingPipelinePage'
+import { ClaimsPage } from '../features/delivery/ClaimsPage'
+import { DeliveriesPage } from '../features/delivery/DeliveriesPage'
+import { DeliveryDetailPage } from '../features/delivery/DeliveryDetailPage'
+import { ExceptionsPage, exceptionsSearchSchema } from '../features/delivery/ExceptionsPage'
+import { DepotsPage } from '../features/fleet/DepotsPage'
 import { DriversPage } from '../features/fleet/DriversPage'
+import { FleetPage } from '../features/fleet/FleetPage'
+import { VehiclePage } from '../features/fleet/VehiclePage'
 import { IncidentsPage } from '../features/incidents/IncidentsPage'
 import { PayoutsPage } from '../features/finance/PayoutsPage'
 import { RefundsQueuePage } from '../features/finance/RefundsQueuePage'
@@ -91,10 +98,46 @@ const corporateAccountRoute = createRoute({
   component: CorporateAccountPage,
 })
 
+// Delivery and fleet. The detail pages sit on their own segments for the reason given
+// above; the two delivery sub-lists and the depots list are literal paths registered
+// before anything that could read their last segment as an id.
+const deliveryDetailRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: '/delivery/$deliveryId',
+  component: DeliveryDetailPage,
+})
+
+const deliveryExceptionsRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: '/deliveries/exceptions',
+  validateSearch: exceptionsSearchSchema,
+  component: ExceptionsPage,
+})
+
+const deliveryClaimsRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: '/deliveries/claims',
+  component: ClaimsPage,
+})
+
+const fleetDepotsRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: '/fleet/depots',
+  component: DepotsPage,
+})
+
+const fleetVehicleRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: '/fleet/vehicle/$vehicleId',
+  component: VehiclePage,
+})
+
 const flatRoutes = [
   { path: '/', component: LiveOpsPage },
   { path: '/rides', component: RidesPage },
+  { path: '/deliveries', component: DeliveriesPage },
   { path: '/drivers', component: DriversPage },
+  { path: '/fleet', component: FleetPage },
   { path: '/corporate', component: CorporatePage },
   { path: '/compliance', component: ComplianceQueuePage },
   { path: '/fraud', component: FraudAlertsPage },
@@ -122,6 +165,11 @@ export const routeTree = rootRoute.addChildren([
     driverKycRoute,
     corporatePipelineRoute,
     corporateAccountRoute,
+    deliveryDetailRoute,
+    deliveryExceptionsRoute,
+    deliveryClaimsRoute,
+    fleetDepotsRoute,
+    fleetVehicleRoute,
     ...flatRoutes.map((route) =>
       createRoute({ getParentRoute: () => authenticatedRoute, path: route.path, component: route.component }),
     ),
