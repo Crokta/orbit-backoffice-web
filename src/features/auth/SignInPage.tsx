@@ -93,7 +93,7 @@ export function SignInPage() {
   const active = step === 'credentials' ? signIn : changePassword
 
   const mismatch = newPassword.length > 0 && confirmPassword.length > 0 && newPassword !== confirmPassword
-  const tooShort = newPassword.length > 0 && newPassword.length < 12
+  const tooShort = newPassword.length > 0 && newPassword.length < 8
 
   const blocked =
     step === 'change' && (mismatch || tooShort || newPassword.length === 0 || confirmPassword.length === 0)
@@ -146,8 +146,8 @@ export function SignInPage() {
                   label="New password"
                   type="password"
                   autoComplete="new-password"
-                  hint="At least 12 characters. Length beats punctuation."
-                  error={tooShort ? 'Too short — 12 characters minimum.' : undefined}
+                  hint="At least 8 characters. Length beats punctuation."
+                  error={tooShort ? 'Too short — 8 characters minimum.' : undefined}
                   value={newPassword}
                   onChange={setNewPassword}
                   autoFocus
